@@ -1,0 +1,380 @@
+<!DOCTYPE html><html lang="fi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kaksoiskonsonantti Arcade – Sekoitus-tilalla (korjattu)</title>
+<meta name="theme-color" content="#0f172a">
+<style>
+:root{--bg:#f8fafc;--panel:#ffffff;--ink:#0f172a;--muted:#64748b;--ok:#16a34a;--bad:#ef4444;--ring:#60a5fa;--card:#eef2ff}
+:root.dark{--bg:#0b1220;--panel:#0f172a;--ink:#e2e8f0;--muted:#94a3b8;--ok:#22c55e;--bad:#f87171;--ring:#93c5fd;--card:#0b1a35}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:radial-gradient(1100px 700px at 10% -10%,#ffffff,transparent),radial-gradient(900px 700px at 110% 0%,#dbeafe,transparent),linear-gradient(var(--bg),#e2e8f0);color:var(--ink)}:root.dark body{background:radial-gradient(1100px 700px at 10% -10%,#0a1224,transparent),radial-gradient(900px 700px at 110% 0%,#0b1a35,transparent),linear-gradient(#0b1220,#0b1220)}
+.container{min-height:100%;display:flex;align-items:center;justify-content:center;padding:16px}
+.app{width:min(1000px,100%);}
+.card{border:1px solid #e5e7eb;background:var(--panel);border-radius:22px;box-shadow:0 12px 34px rgba(2,6,23,.12);padding:16px}
+:root.dark .card{border-color:#1f2937;box-shadow:0 20px 45px rgba(0,0,0,.35)}
+.header{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.logo{font-weight:900;font-size:clamp(22px,4vw,32px);letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.badge{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid #334155;background:linear-gradient(#fff,#f1f5f9)}
+:root.dark .badge{border-color:#475569;background:linear-gradient(#0b1220,#0b1220)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{appearance:none;border:1px solid #334155;background:var(--ink);color:#fff;border-radius:999px;padding:12px 16px;font-weight:800;box-shadow:0 10px 24px rgba(2,6,23,.18);cursor:pointer;transition:transform .06s ease,opacity .15s}
+.btn.secondary{background:transparent;color:var(--ink)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn:active{transform:translateY(1px)}
+.icon{font-size:18px}
+.menu-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:12px}
+@media(min-width:720px){.menu-grid{grid-template-columns:repeat(3,1fr)}}
+.mode-card{display:flex;flex-direction:column;gap:8px;padding:16px;background:linear-gradient(180deg,var(--card),transparent);border-radius:18px;border:1px solid rgba(99,102,241,.15)}
+.mode-title{font-weight:900;font-size:18px}
+.mode-desc{color:var(--muted);font-size:13px;min-height:38px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.hud{padding:10px;text-align:center;border-radius:14px;border:1px solid #e5e7eb;background:var(--panel)}
+:root.dark .hud{border-color:#1f2937}
+.label{font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--muted)}
+.value{font-size:18px;font-weight:900}
+.lives span{opacity:.25}.lives .on{opacity:1}
+.progress{height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden;border:1px solid #cbd5e1}
+:root.dark .progress{background:#0b1220;border-color:#1f2937}
+.bar{height:100%;width:100%;background:linear-gradient(90deg,#22c55e,#3b82f6);transition:width .15s linear}
+.words{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+@media(min-width:720px){.words{grid-template-columns:repeat(3,1fr)}}
+.word{font-size:clamp(22px,6vw,32px);font-weight:900;padding:18px;border-radius:18px;border:2px solid #e5e7eb;background:#f8fafc;cursor:pointer;box-shadow:0 10px 24px rgba(2,6,23,.06);transform:translateZ(0);transition:transform .05s ease, border-color .1s}
+:root.dark .word{background:#0b1220;border-color:#1f2937}
+.word:active{transform:translateY(1px)}
+.word.selected{border-color:#60a5fa;outline:2px solid #60a5fa}
+.tip{margin:6px 0 8px;color:var(--muted);text-align:center}
+.center{text-align:center}
+.big{font-size:28px;font-weight:900;margin:4px 0}
+.small{font-size:13px;color:var(--muted)}
+.hidden{display:none !important}
+footer{margin-top:8px;text-align:center;color:var(--muted);font-size:12px}
+hr.sep{border:none;border-top:1px solid #e5e7eb;margin:10px 0}
+/* Drag & Drop */
+.board{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:720px){.board{grid-template-columns:repeat(3,1fr)}}
+.slot{border:2px dashed #94a3b8;border-radius:16px;padding:12px;background:rgba(148,163,184,.08);min-height:90px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.slot .pic{font-size:36px;margin-bottom:6px}
+.drags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.drag{padding:10px 12px;border:1px solid #94a3b8;border-radius:999px;background:#fff;cursor:grab;touch-action:none}
+:root.dark .drag{background:#0b1220}
+.slot.hit{border-color:#22c55e;background:rgba(34,197,94,.08)}
+.slot.miss{border-color:#ef4444;background:rgba(239,68,68,.08)}
+/* Typing */
+.input-wrap{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:8px}
+.input{font-size:20px;padding:12px 14px;border-radius:14px;border:1px solid #94a3b8;min-width:220px;background:transparent;color:var(--ink)}
+/* Mobile helpers */
+.mobilebar{position:fixed;left:0;right:0;bottom:0;padding:8px;background:linear-gradient(180deg,transparent,rgba(2,6,23,.06));display:flex;gap:8px;justify-content:center}
+@media(min-width:720px){.mobilebar{display:none}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:70px;padding:10px 14px;border-radius:14px;background:var(--panel);border:1px solid #cbd5e1;box-shadow:0 10px 24px rgba(2,6,23,.18);font-weight:800}
+:root.dark .toast{border-color:#1f2937}
+</style></head><body><div class="container"><div class="app">
+  <div class="card">
+    <div class="header">
+      <div class="logo">🎯 Kaksoiskonsonantti <span class="badge">Arcade</span></div>
+      <div class="row">
+        <button id="menuBtn" class="btn secondary hidden">⬅︎ Päävalikko</button>
+        <button id="full" class="btn secondary" title="Koko näyttö"><span class="icon">⛶</span></button>
+        <button id="theme" class="btn secondary" title="Teema">🌗</button>
+        <button id="sound" class="btn" title="Äänet päälle/pois">🔊</button>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <div id="menu">
+      <div class="tip">Vaikeampi <b>Sekoitus</b>: 0–3 vaihtoehtoa voi olla oikein. Valitse kaikki oikeat ja <b>Lukitse</b> (Enter tai 🔒 mobiilista).</div>
+      <div class="menu-grid">
+        <div class="mode-card"><div class="mode-title">Klassinen</div><div class="mode-desc">3 elämää – valitse oikea sana.</div><button data-mode="classic" class="btn">Pelaa</button></div>
+        <div class="mode-card"><div class="mode-title">Nopeuskisa</div><div class="mode-desc">60 sekuntia – montako oikein ehdit?</div><button data-mode="time" class="btn">Pelaa</button></div>
+        <div class="mode-card"><div class="mode-title">Harjoittelu</div><div class="mode-desc">Ei aikarajaa – vihjeet käytettävissä.</div><button data-mode="practice" class="btn">Pelaa</button></div>
+        <div class="mode-card"><div class="mode-title">Kirjoitushaaste</div><div class="mode-desc">Kirjoita sana oikein.</div><button data-mode="typing" class="btn">Pelaa</button></div>
+        <div class="mode-card"><div class="mode-title">Drag & Drop</div><div class="mode-desc">Raahaa oikea sana kuvan alle.</div><button data-mode="dragdrop" class="btn">Pelaa</button></div>
+        <div class="mode-card"><div class="mode-title">Sekoitus (Hard)</div><div class="mode-desc">3 vaihtoehtoa; 0–3 voi olla oikein. Valitse kaikki joissa on kaksoiskonsonantti.</div><button data-mode="mix" class="btn">Pelaa</button></div>
+      </div>
+      <hr class="sep">
+      <div class="row" style="justify-content:space-between">
+        <div class="small">Ennätykset tallentuvat tälle laitteelle.</div>
+        <div id="his" class="small"></div>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game" class="hidden">
+      <div class="grid">
+        <div class="hud"><div class="label">Pisteet</div><div id="score" class="value">0</div></div>
+        <div class="hud"><div class="label">Kierros</div><div id="round" class="value">1/1</div></div>
+        <div class="hud"><div class="label">Elämät</div><div id="lives" class="value lives"><span class="on">❤️</span><span class="on">❤️</span><span class="on">❤️</span></div></div>
+      </div>
+      <div id="timerWrap" class="progress hidden"><div id="bar" class="bar"></div></div>
+
+      <div id="panel">
+        <div id="tip" class="tip">Valitse sana, jossa on kaksoiskonsonantti.</div>
+        <div id="words" class="words"></div>
+
+        <div id="typingUI" class="input-wrap hidden">
+          <input id="typingInput" class="input" placeholder="Kirjoita vastaus..." autocomplete="off" inputmode="latin-name" />
+          <button id="typingSubmit" class="btn">OK</button>
+        </div>
+
+        <div id="ddUI" class="hidden">
+          <div id="ddBoard" class="board"></div>
+          <div id="ddDrags" class="drags"></div>
+        </div>
+
+        <div id="controls" class="row" style="margin-top:8px">
+          <button id="hint" class="btn secondary">Vihje</button>
+          <button id="lock" class="btn secondary hidden">Lukitse</button>
+          <button id="pause" class="btn secondary">⏸︎ Tauko</button>
+          <button id="quit" class="btn secondary">Päävalikko</button>
+        </div>
+        <div id="over" class="center hidden" style="margin-top:8px">
+          <div id="msg" class="big">Hyvä yritys!</div>
+          <div id="sub" class="small">Tuloksesi: 0</div>
+          <div class="row" style="justify-content:center">
+            <button id="again" class="btn">Pelaa uudelleen</button>
+            <button id="toMenu" class="btn secondary">Päävalikkoon</button>
+            <button id="share" class="btn secondary">Jaa</button>
+          </div>
+        </div>
+      </div>
+      <footer>Vinkki: <b>Sekoitus</b>-tilassa voit myös painaa <b>Enter</b> tai alareunan 🔒.</footer>
+    </div>
+  </div>
+</div>
+<div class="mobilebar">
+  <button id="mLock" class="btn ghost hidden">🔒</button>
+  <button id="mHint" class="btn ghost">💡</button>
+  <button id="mPause" class="btn ghost">⏸︎</button>
+  <button id="mMenu" class="btn ghost">🏠</button>
+</div>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+(()=>{
+  const $=(q)=>document.querySelector(q);
+  const rand=(n)=>Math.floor(Math.random()*n);
+  const shuffle=(a)=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=rand(i+1);[b[i],b[j]]=[b[j],b[i]]}return b};
+  const stripVowels=(w)=>w.normalize("NFC").replace(/[aeiouyäöAEIOUYÄÖ]/g,"");
+  const hasDouble=(w)=>/(.)\\1/.test(stripVowels(w));
+  const now=()=>Date.now();
+  const store={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+  let audioCtx; const beep=(f=600,d=0.07,type="sine")=>{ if(!store.get("sound",true)) return; try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type=type;o.frequency.value=f; g.gain.value=0.06; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>o.stop(),d*1000);}catch{} };
+  const vibrate=(ms)=>{ try{ if(store.get("vibe",true)) navigator.vibrate?.(ms) }catch{} };
+
+  const BASE=[
+    ["mato","matto","🐍"],["muta","mutta","🧪"],["kisa","kissa","🐱"],["tali","talli","🐴"],
+    ["kumi","kummi","🎈"],["hali","halli","🏟️"],["kelo","kello","🕰️"],["napi","nappi","🧵"],
+    ["hapi","happi","🫧"],["poti","potti","🏆"],["sopa","soppa","🍲"],["kuka","kukka","🌸"],
+    ["laki","lakki","🧢"],["pana","panna","➡️"],["kana","kanna","🐔"],["tapa","tappa","🛑"],
+    ["mura","murra","💥"],["sata","satta","💯"],["kala","kalla","🐟"],["muru","murru","🍪"]
+  ];
+
+  const THEME=$("#theme"), FULL=$("#full"), SOUND=$("#sound"), MENU=$("#menu"), GAME=$("#game"), MENU_BTN=$("#menuBtn");
+  const HIS=$("#his");
+  const W=$("#words"), TIP=$("#tip"), SC=$("#score"), RN=$("#round"), LV=$("#lives");
+  const TIMER_WRAP=$("#timerWrap"), BAR=$("#bar"), PANEL=$("#panel");
+  const HINT=$("#hint"), LOCK=$("#lock"), PAUSE=$("#pause"), QUIT=$("#quit"), OVER=$("#over"), MSG=$("#msg"), SUB=$("#sub"), AGAIN=$("#again"), TO_MENU=$("#toMenu"), SHARE=$("#share");
+  const TYPING_UI=$("#typingUI"), TYPING_INPUT=$("#typingInput"), TYPING_SUBMIT=$("#typingSubmit");
+  const DD_UI=$("#ddUI"), DD_BOARD=$("#ddBoard"), DD_DRAGS=$("#ddDrags");
+  const M_PAUSE=$("#mPause"), M_HINT=$("#mHint"), M_MENU=$("#mMenu"), M_LOCK=$("#mLock");
+  const TOAST=$("#toast");
+
+  const applyTheme=()=>document.documentElement.classList.toggle("dark", store.get("theme","auto")==="dark" || (store.get("theme","auto")==="auto" && window.matchMedia?.('(prefers-color-scheme: dark)').matches));
+  applyTheme();
+  THEME.onclick=()=>{ const cur=store.get("theme","auto"); const next=cur==="dark"?"light":cur==="light"?"auto":"dark"; store.set("theme",next); applyTheme(); THEME.textContent= next==="dark"?"🌙":next==="light"?"☀️":"🌗"; };
+  SOUND.onclick=()=>{ const v=!store.get("sound",true); store.set("sound",v); SOUND.textContent = v?"🔊":"🔇"; beep(800,0.05); };
+  FULL.onclick=()=>{ const el=document.documentElement; if(!document.fullscreenElement){ el.requestFullscreen?.(); } else { document.exitFullscreen?.(); } };
+
+  function setHis(){ const hs=store.get("arcade_his",{}); const s=`Klassinen: ${hs.classic?.best??0}p • Nopeuskisa: ${hs.time?.best??0}p • Harjoittelu: ${hs.practice?.best??0}p • Kirjoitus: ${hs.typing?.best??0}p • DnD: ${hs.dragdrop?.best??0}p • Sekoitus: ${hs.mix?.best??0}p`; HIS.textContent=s; }
+  function saveHis(mode,score){ const hs=store.get("arcade_his",{}); const best=Math.max(score, hs[mode]?.best||0); hs[mode]={best, last:score, date:new Date().toLocaleDateString()}; store.set("arcade_his",hs); setHis(); }
+  setHis();
+
+  document.querySelectorAll('[data-mode]').forEach(btn=>btn.addEventListener('click', () => start(btn.dataset.mode)));
+  let mode="classic", pairs=[], idx=0, score=0, lives=3, ended=false, paused=false, roundWords=[], timerId=null;
+  let mixLockTimer=null, mixBusy=false;
+
+  function showMenuBtn(yes){ MENU_BTN.classList.toggle("hidden", !yes); }
+  const toMenu=()=>{ stopTimer(); GAME.classList.add("hidden"); MENU.classList.remove("hidden"); showMenuBtn(false); OVER.classList.add("hidden"); W.innerHTML=""; TYPING_UI.classList.add("hidden"); DD_UI.classList.add("hidden"); LOCK.classList.add("hidden"); TIP.textContent="Valitse sana, jossa on kaksoiskonsonantti."; hideToast(); };
+  MENU_BTN.onclick=toMenu; TO_MENU.onclick=toMenu; QUIT.onclick=toMenu; M_MENU.onclick=toMenu;
+
+  function start(m){
+    mode=m; ended=false; paused=false; score=0; lives= (mode==="classic"||mode==="mix")?3 : Infinity; idx=0; mixBusy=false;
+    pairs = shuffle([...BASE]);
+    MENU.classList.add("hidden"); GAME.classList.remove("hidden"); showMenuBtn(true);
+    OVER.classList.add("hidden"); W.classList.remove("hidden"); TIP.classList.remove("hidden");
+    RN.textContent=`0/${pairs.length}`; SC.textContent=score; renderLives();
+    TIMER_WRAP.classList.toggle("hidden", mode!=="time");
+    LOCK.classList.toggle("hidden", mode!=="mix");
+    M_LOCK.classList.toggle("hidden", mode!=="mix");
+    if(mode==="typing"){ TYPING_UI.classList.remove("hidden"); W.classList.add("hidden"); TIP.textContent="Kirjoita sana kaksoiskonsonantilla ja paina Enter/OK."; } else { TYPING_UI.classList.add("hidden"); W.classList.remove("hidden"); }
+    if(mode==="dragdrop"){ DD_UI.classList.remove("hidden"); TIP.textContent="Raahaa oikea sana kuvan alle."; } else { DD_UI.classList.add("hidden"); }
+    if(mode==="mix"){ TIP.innerHTML="Valitse <b>kaikki</b> sanat, joissa on kaksoiskonsonantti (0–3 kpl), ja paina <b>Lukitse</b> (tai Enter/🔒)."; }
+    nextRound(true); beep(700,0.06);
+  }
+
+  function renderLives(){ LV.innerHTML=""; const max=3; for(let i=0;i<max;i++){ const s=document.createElement("span"); s.textContent="❤️"; s.className = (i<lives?"on":""); LV.appendChild(s); } }
+
+  function nextRound(){
+    if(ended) return;
+    if(idx>=pairs.length){ return end(); }
+    const pair=pairs[idx++];
+    RN.textContent=`${idx}/${pairs.length}`;
+    hideToast();
+    if(mode==="typing"){ renderTyping(pair); }
+    else if(mode==="dragdrop"){ renderDragDrop(pair); }
+    else if(mode==="mix"){ renderMix(); }
+    else { renderChoice(pair); }
+    if(mode==="time"){ startGlobalTimer(); } else { startRoundTimer(); }
+  }
+
+  // Choice (2 options)
+  function renderChoice(pair){
+    W.innerHTML="";
+    const opts = shuffle([pair[0],pair[1]]);
+    roundWords = opts;
+    opts.forEach((w,i)=>{
+      const b=document.createElement("button"); b.className="word"; b.textContent=w; b.accessKey=i===0?"1":"2";
+      b.onclick=()=>pick(w); W.appendChild(b);
+    });
+    HINT.onclick=()=>{ const wrong = roundWords.find(w=>!hasDouble(w)); [...W.children].forEach(b=>{ if(b.textContent===wrong){ b.style.opacity=".45"; b.style.pointerEvents="none"; } }); beep(820,0.05,"triangle"); };
+  }
+
+  // Mix mode (3 options; 0-3 correct)
+  function renderMix(){
+    W.innerHTML="";
+    clearTimeout(mixLockTimer); mixLockTimer=null; mixBusy=false;
+    const chosen = shuffle([...BASE]).slice(0,3);
+    roundWords = chosen.map(p=> (Math.random()<0.5? p[0]:p[1]));
+    roundWords.forEach((w)=>{
+      const b=document.createElement("button"); b.className="word"; b.textContent=w;
+      b.onclick=()=>{ b.classList.toggle("selected"); resetAutoLock(); };
+      W.appendChild(b);
+    });
+    LOCK.onclick=lockMix; M_LOCK.onclick=lockMix;
+    HINT.onclick=()=>{ const correct = roundWords.filter(hasDouble).length; showToast(`Oikeita on ${correct} kpl tällä kierroksella.`); beep(820,0.05,"triangle"); };
+    resetAutoLock();
+  }
+  function resetAutoLock(){
+    clearTimeout(mixLockTimer);
+    mixLockTimer = setTimeout(()=>{ lockMix(); }, 1200); // autolukitus 1.2s valinnan jälkeen
+  }
+  function lockMix(){
+    if(mixBusy) return; mixBusy=true; clearTimeout(mixLockTimer);
+    const selected=[...W.querySelectorAll(".word.selected")].map(b=>b.textContent);
+    const correct = roundWords.filter(hasDouble);
+    const selSet = new Set(selected);
+    const ok = selected.length===correct.length && correct.every(w=>selSet.has(w));
+    // visual feedback
+    [...W.children].forEach(b=>{ const isC=hasDouble(b.textContent); b.style.borderColor= isC ? "#16a34a" : "#ef4444"; });
+    if(ok){
+      score++; SC.textContent=score; beep(760,0.07); showToast("✅ Oikein! +1 piste");
+      setTimeout(()=>{ mixBusy=false; nextRound(); }, 700);
+    }else{
+      beep(260,0.1,"square"); vibrate(40);
+      if(mode==="mix"){ lives--; renderLives(); }
+      const rightList = correct.length ? correct.join(", ") : "ei yhtään";
+      showToast(`❌ Väärin. Oikeat: ${rightList}`);
+      if(lives<=0){ return end(); }
+      setTimeout(()=>{ mixBusy=false; nextRound(); }, 900);
+    }
+  }
+
+  // Typing
+  function renderTyping(pair){
+    TYPING_INPUT.value=""; TYPING_INPUT.focus();
+    TYPING_SUBMIT.onclick=()=>checkTyping(pair);
+    TYPING_INPUT.onkeydown=(e)=>{ if(e.key==="Enter"){ checkTyping(pair); } };
+    const base = hasDouble(pair[0]) ? pair[1] : pair[0];
+    wordsText(`Korjaa sana: ${base}`);
+    HINT.onclick=()=>{ const correct = hasDouble(pair[0]) ? pair[0] : pair[1]; const partial = correct.slice(0,(TYPING_INPUT.value||"").length+1); TYPING_INPUT.value = partial; beep(820,0.05,"triangle"); TYPING_INPUT.focus(); };
+  }
+  function wordsText(text){ W.innerHTML=`<div class="center small">${text}</div>`; W.classList.remove("hidden"); }
+  function checkTyping(pair){
+    const correct = hasDouble(pair[0]) ? pair[0] : pair[1];
+    const val = (TYPING_INPUT.value||"").trim().toLowerCase();
+    if(val === correct){ score++; SC.textContent=score; beep(760,0.07); showToast("✅ Oikein! +1 piste"); nextRound(); }
+    else{ beep(260,0.08,"square"); showToast(`❌ Väärin. Oikea: ${correct}`); wordsText(`Väärin. Oikea on: <b>${correct}</b>`); setTimeout(()=>nextRound(),700); }
+  }
+
+  // Drag & Drop
+  function renderDragDrop(pair){
+    DD_BOARD.innerHTML=""; DD_DRAGS.innerHTML="";
+    const correct = hasDouble(pair[0]) ? pair[0] : pair[1];
+    const wrong = hasDouble(pair[0]) ? pair[1] : pair[0];
+    const slot = document.createElement("div"); slot.className="slot"; slot.dataset.accept=correct;
+    const pic = document.createElement("div"); pic.className="pic"; pic.textContent=pair[2]||"🖼️";
+    const lbl = document.createElement("div"); lbl.className="small"; lbl.textContent="Pudota oikea sana tähän";
+    slot.appendChild(pic); slot.appendChild(lbl); DD_BOARD.appendChild(slot);
+    const dr1 = mkDrag(correct); const dr2 = mkDrag(wrong);
+    shuffle([dr1,dr2]).forEach(d=>DD_DRAGS.appendChild(d));
+    enableDrop(slot);
+    HINT.onclick=()=>{ slot.classList.add("hit"); setTimeout(()=>slot.classList.remove("hit"),300); beep(820,0.05,"triangle"); };
+  }
+  function mkDrag(text){
+    const d=document.createElement("div"); d.className="drag"; d.textContent=text; d.setAttribute("draggable","true");
+    d.addEventListener("dragstart",(e)=>{ e.dataTransfer.setData("text/plain", text); });
+    d.addEventListener("pointerdown", (e)=>{ d.setPointerCapture(e.pointerId); d.style.position="relative"; d.style.zIndex="10"; const startX=e.clientX, startY=e.clientY; const rect=d.getBoundingClientRect(); const ox=startX-rect.left, oy=startY-rect.top;
+      const move=(ev)=>{ const x=ev.clientX-ox, y=ev.clientY-oy; d.style.left=x+"px"; d.style.top=y+"px"; };
+      const up=(ev)=>{ d.releasePointerCapture(e.pointerId); d.style.left=""; d.style.top=""; d.style.position=""; d.style.zIndex=""; document.removeEventListener("pointermove",move); document.removeEventListener("pointerup",up);
+        const dropEl=document.elementFromPoint(ev.clientX, ev.clientY); if(dropEl && dropEl.closest(".slot")){ tryDrop(dropEl.closest(".slot"), text); }
+      };
+      document.addEventListener("pointermove",move); document.addEventListener("pointerup",up);
+    });
+    return d;
+  }
+  function enableDrop(slot){
+    slot.addEventListener("dragover",(e)=>{ e.preventDefault(); });
+    slot.addEventListener("drop",(e)=>{ e.preventDefault(); const t=e.dataTransfer.getData("text/plain"); tryDrop(slot,t); });
+  }
+  function tryDrop(slot, text){
+    if(slot.dataset.accept===text){
+      slot.classList.add("hit"); slot.classList.remove("miss"); slot.querySelector(".small").textContent="Oikein!";
+      beep(760,0.07); score++; SC.textContent=score; showToast("✅ Oikein! +1 piste");
+      setTimeout(()=>{ nextRound(); },500);
+    }else{
+      slot.classList.add("miss"); slot.classList.remove("hit"); slot.querySelector(".small").textContent="Väärä sana!";
+      beep(260,0.08,"square"); showToast("❌ Väärä sana");
+    }
+  }
+
+  // Timers
+  function startRoundTimer(){ stopTimer(); if(mode==="time"){ return; } const start=now(); const limit=8000; const step=()=>{ if(ended||paused) return; const left=Math.max(0,1-((now()-start)/limit)); BAR.style.width=(left*100).toFixed(1)+"%"; timerId=requestAnimationFrame(step); }; TIMER_WRAP.classList.remove("hidden"); step(); }
+  function startGlobalTimer(){ stopTimer(); const endT=now()+60000; const step=()=>{ if(ended||paused||mode!=="time") return; const left=Math.max(0,(endT-now())/60000); BAR.style.width=(left*100).toFixed(1)+"%"; if(left<=0){ return end(); } timerId=requestAnimationFrame(step); }; TIMER_WRAP.classList.remove("hidden"); step(); }
+  function stopTimer(){ if(timerId){ cancelAnimationFrame(timerId); timerId=null; } }
+
+  function pick(word){
+    if(ended||paused) return;
+    const other = roundWords[0]===word?roundWords[1]:roundWords[0];
+    const ok = hasDouble(word)&&!hasDouble(other);
+    if(ok){ score++; SC.textContent=score; beep(760,0.07); showToast("✅ Oikein! +1 piste"); nextRound(); }
+    else{ beep(260,0.08,"square"); showToast("❌ Väärin"); nextRound(); }
+  }
+
+  const togglePause=()=>{ if(ended) return; paused=!paused; if(paused){ stopTimer(); PAUSE.textContent="▶︎ Jatka"; TIP.textContent="Peli tauolla"; } else { if(mode==="time") startGlobalTimer(); else startRoundTimer(); PAUSE.textContent="⏸︎ Tauko"; } };
+  PAUSE.onclick=togglePause; M_PAUSE.onclick=togglePause;
+  M_HINT.onclick=()=>HINT.click();
+
+  function end(){
+    ended=true; stopTimer(); OVER.classList.remove("hidden"); W.classList.add("hidden"); TYPING_UI.classList.add("hidden"); DD_UI.classList.add("hidden");
+    const label = mode==="classic"?"Klassinen":mode==="time"?"Nopeuskisa":mode==="practice"?"Harjoittelu":mode==="typing"?"Kirjoitus":mode==="dragdrop"?"Drag&Drop":"Sekoitus";
+    MSG.textContent = (mode==="time") ? "Aika loppui!" : "Peli päättyi!";
+    SUB.textContent = `Pisteet: ${score} • Pelimuoto: ${label}`;
+    if(mode!=="practice") saveHis(mode,score);
+  }
+  AGAIN.onclick=()=>start(mode);
+  SHARE.onclick=async()=>{ const label = mode==="classic"?"Klassinen":mode==="time"?"Nopeuskisa":mode==="practice"?"Harjoittelu":mode==="typing"?"Kirjoitus":mode==="dragdrop"?"Drag&Drop":"Sekoitus"; const text = `Kaksoiskonsonantti Arcade – ${label}: ${score}p`; try{ await navigator.share?.({text}); }catch{ navigator.clipboard?.writeText(text); alert("Tulosteksti kopioitu leikepöydälle!"); } };
+
+  window.addEventListener("keydown",(e)=>{
+    if(GAME.classList.contains("hidden")) return;
+    if(e.code==="Space"){ e.preventDefault(); PAUSE.click(); return; }
+    if(e.key==="1"){ const b=W.querySelectorAll(".word")[0]; b?.click(); }
+    if(e.key==="2"){ const b=W.querySelectorAll(".word")[1]; b?.click(); }
+    if(e.key==="3"){ const b=W.querySelectorAll(".word")[2]; b?.click(); }
+    if(e.key.toLowerCase()==="q"){ toMenu(); }
+    if(mode==="typing" && e.key==="Enter"){ TYPING_SUBMIT.click(); }
+    if(mode==="mix" && e.key==="Enter"){ lockMix(); }
+  });
+
+  function showToast(text){ TOAST.textContent=text; TOAST.classList.remove("hidden"); }
+  function hideToast(){ TOAST.classList.add("hidden"); }
+
+  document.documentElement.style.setProperty("--safe-bottom", (window.visualViewport?.height? (window.innerHeight - window.visualViewport.height) : 0) + "px");
+})();
+</script></body></html>
