@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <title>Kaksoiskonsonantti Arcade - Täysversio</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #f0f0f0; }
+    h1 { color: #333; }
+    .game-mode { margin: 20px; }
+    button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+    #question { font-size: 24px; margin: 20px; }
+    #answer { padding: 10px; font-size: 18px; }
+    #feedback { margin-top: 15px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Kaksoiskonsonantti Arcade 🎮</h1>
+  <div id="menu">
+    <h2>Valitse pelimuoto</h2>
+    <div class="game-mode">
+      <button onclick="startMultipleChoice()">Monivalinta</button>
+      <button onclick="startTyping()">Kirjoita vastaus</button>
+      <button onclick="startDragDrop()">Raahaa oikea</button>
+    </div>
+  </div>
+  <div id="game" style="display:none;">
+    <div id="question"></div>
+    <div id="options"></div>
+    <input id="answer" style="display:none;" placeholder="Kirjoita vastaus..." />
+    <div id="drag-area" style="display:none;"></div>
+    <div id="feedback"></div>
+    <button onclick="backToMenu()">Takaisin valikkoon</button>
+  </div>
+<script>
+const words = [
+  { word: "kissa", correct: true },
+  { word: "talo", correct: false },
+  { word: "pallo", correct: true },
+  { word: "juna", correct: false },
+  { word: "hissi", correct: true },
+  { word: "koira", correct: false }
+];
+
+let currentWord = null;
+let score = 0;
+
+function pickWord() {
+  currentWord = words[Math.floor(Math.random() * words.length)];
+  document.getElementById("question").innerText = "Onko sanassa kaksoiskonsonantti: " + currentWord.word + "?";
+}
+
+function startMultipleChoice() {
+  document.getElementById("menu").style.display = "none";
+  document.getElementById("game").style.display = "block";
+  document.getElementById("options").innerHTML = '<button onclick="checkAnswer(true)">Kyllä</button><button onclick="checkAnswer(false)">Ei</button>';
+  document.getElementById("answer").style.display = "none";
+  document.getElementById("drag-area").style.display = "none";
+  pickWord();
+}
+
+function startTyping() {
+  document.getElementById("menu").style.display = "none";
+  document.getElementById("game").style.display = "block";
+  document.getElementById("options").innerHTML = '';
+  document.getElementById("answer").style.display = "inline-block";
+  document.getElementById("drag-area").style.display = "none";
+  pickWord();
+}
+
+function startDragDrop() {
+  document.getElementById("menu").style.display = "none";
+  document.getElementById("game").style.display = "block";
+  document.getElementById("options").innerHTML = '';
+  document.getElementById("answer").style.display = "none";
+  document.getElementById("drag-area").style.display = "block";
+  document.getElementById("question").innerText = "Raahaa sana oikeaan laatikkoon!";
+  document.getElementById("drag-area").innerHTML = `
+    <div draggable="true" ondragstart="drag(event)" id="dragword">${words[Math.floor(Math.random() * words.length)].word}</div>
+    <div style="display:flex; justify-content:space-around; margin-top:20px;">
+      <div id="droptrue" ondrop="drop(event, true)" ondragover="allowDrop(event)" style="border:2px solid green; padding:20px; width:100px;">Kaksois</div>
+      <div id="dropfalse" ondrop="drop(event, false)" ondragover="allowDrop(event)" style="border:2px solid red; padding:20px; width:100px;">Ei kaksois</div>
+    </div>`;
+}
+
+function checkAnswer(answer) {
+  if (answer === currentWord.correct) {
+    document.getElementById("feedback").innerText = "Oikein!";
+    score++;
+  } else {
+    document.getElementById("feedback").innerText = "Väärin!";
+  }
+  pickWord();
+}
+
+function backToMenu() {
+  document.getElementById("menu").style.display = "block";
+  document.getElementById("game").style.display = "none";
+  score = 0;
+  document.getElementById("feedback").innerText = "";
+}
+
+function allowDrop(ev) {
+  ev.preventDefault();
+}
+
+function drag(ev) {
+  ev.dataTransfer.setData("text", ev.target.id);
+}
+
+function drop(ev, expected) {
+  ev.preventDefault();
+  let data = ev.dataTransfer.getData("text");
+  let word = document.getElementById(data).innerText;
+  let correct = words.find(w => w.word === word).correct;
+  if (correct === expected) {
+    document.getElementById("feedback").innerText = "Oikein!";
+    score++;
+  } else {
+    document.getElementById("feedback").innerText = "Väärin!";
+  }
+  startDragDrop();
+}
+</script>
+</body>
+</html>
