@@ -1,125 +1,3586 @@
 <!DOCTYPE html>
 <html lang="fi">
 <head>
-  <meta charset="UTF-8">
-  <title>Kaksoiskonsonantti Arcade - Täysversio</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #f0f0f0; }
-    h1 { color: #333; }
-    .game-mode { margin: 20px; }
-    button { padding: 10px 20px; margin: 5px; font-size: 16px; }
-    #question { font-size: 24px; margin: 20px; }
-    #answer { padding: 10px; font-size: 18px; }
-    #feedback { margin-top: 15px; font-weight: bold; }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Koulupeli Arcade — OPS-kokoversio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f6f7fb; --card:#ffffff; --primary:#4a90e2; --primary2:#6aa6f0; --text:#1f2937; --muted:#6b7280;
+  --ok:#15803d; --bad:#b91c1c;
+}
+* { box-sizing: border-box; }
+body { margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
+header { background:linear-gradient(90deg, var(--primary), var(--primary2)); color:#fff; padding:22px 16px; text-align:center; font-weight:800; font-size:22px; letter-spacing:.2px; }
+.wrap { max-width: 1000px; margin: 16px auto; padding: 0 12px; }
+.grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; }
+.card { background:var(--card); border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.06); }
+.title { margin:0 0 10px; font-size:18px; font-weight:800; }
+.row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+button { background:var(--primary); color:#fff; border:none; padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer; transition:transform .02s; }
+button:active { transform: translateY(1px); }
+button.ghost { background:#eaf2fd; color:#245ea6; }
+button.full { width:100%; }
+button:disabled { opacity:.6; cursor:not-allowed; }
+.hidden { display:none !important; }
+.pill { display:inline-block; padding:6px 10px; border-radius:999px; background:#eef3ff; color:#245ea6; font-weight:700; font-size:12px; }
+.question { font-size:20px; font-weight:800; margin:12px 0; }
+.options { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:10px; }
+input[type="text"] { width:100%; padding:10px 12px; border-radius:12px; border:1px solid #dfe3ea; font-size:16px; }
+.meta { color:var(--muted); font-size:13px; }
+.bar { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px; flex-wrap:wrap; }
+.score { font-weight:800; }
+.feedback { margin-top:8px; font-weight:800; }
+.ok { color:var(--ok); } .bad { color:var(--bad); }
+footer { text-align:center; color:#888; font-size:12px; padding:22px; }
+.small { font-size:12px; color:#64748b; }
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <h1>Kaksoiskonsonantti Arcade 🎮</h1>
-  <div id="menu">
-    <h2>Valitse pelimuoto</h2>
-    <div class="game-mode">
-      <button onclick="startMultipleChoice()">Monivalinta</button>
-      <button onclick="startTyping()">Kirjoita vastaus</button>
-      <button onclick="startDragDrop()">Raahaa oikea</button>
+<header>Koulupeli Arcade — OPS-kokoversio</header>
+<div class="wrap">
+
+  <!-- Login -->
+  <div class="card">
+    <div id="g_id_onload" data-client_id="645853178160-ktjib5onu0omc26gifnae1lriv07a3ji.apps.googleusercontent.com" data-auto_prompt="false"></div>
+    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline"></div>
+    <div class="meta">Kirjautuminen on vapaaehtoista. Pisteet ja nimi näytetään vain tällä sivulla.</div>
+    <div id="userInfo" class="small"></div>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="card" id="step1">
+    <h3 class="title">1) Valitse luokka</h3>
+    <div class="grid" id="classGrid"></div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="card hidden" id="step2">
+    <div class="bar">
+      <h3 class="title">2) Valitse oppiaine</h3>
+      <span class="pill" id="selClass"></span>
+    </div>
+    <div class="grid" id="subjectGrid"></div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="card hidden" id="step3">
+    <div class="bar">
+      <h3 class="title">3) Valitse aihe</h3>
+      <span class="pill" id="selSubject"></span>
+    </div>
+    <div class="grid" id="topicGrid"></div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="card hidden" id="step4">
+    <div class="bar">
+      <h3 class="title">4) Valitse pelimuoto</h3>
+      <span class="pill" id="selTopic"></span>
+    </div>
+    <div class="row">
+      <button onclick="startGame('mc')">Monivalinta</button>
+      <button class="ghost" onclick="startGame('input')">Kirjoita vastaus</button>
     </div>
   </div>
-  <div id="game" style="display:none;">
-    <div id="question"></div>
-    <div id="options"></div>
-    <input id="answer" style="display:none;" placeholder="Kirjoita vastaus..." />
-    <div id="drag-area" style="display:none;"></div>
-    <div id="feedback"></div>
-    <button onclick="backToMenu()">Takaisin valikkoon</button>
+
+  <!-- Game -->
+  <div class="card hidden" id="gameCard">
+    <div class="bar">
+      <div class="pill" id="crumbs"></div>
+      <div class="score">Pisteet: <span id="score">0</span></div>
+    </div>
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <div id="inputWrap" class="hidden">
+      <input type="text" id="answerInput" placeholder="Kirjoita vastaus..."/>
+      <div class="row" style="margin-top:8px;">
+        <button onclick="submitInput()" class="full">Tarkista</button>
+      </div>
+    </div>
+    <div id="feedback" class="feedback"></div>
+    <div class="row" style="margin-top:8px;">
+      <button onclick="nextQuestion()">Seuraava</button>
+      <button class="ghost" onclick="backToMenu()">Takaisin valikkoon</button>
+    </div>
   </div>
+
+  <footer>© Koulupeli Arcade — OPS-kokoversio. (Päiväys: 2025-09-06)</footer>
+</div>
+
 <script>
-const words = [
-  { word: "kissa", correct: true },
-  { word: "talo", correct: false },
-  { word: "pallo", correct: true },
-  { word: "juna", correct: false },
-  { word: "hissi", correct: true },
-  { word: "koira", correct: false }
-];
-
-let currentWord = null;
-let score = 0;
-
-function pickWord() {
-  currentWord = words[Math.floor(Math.random() * words.length)];
-  document.getElementById("question").innerText = "Onko sanassa kaksoiskonsonantti: " + currentWord.word + "?";
-}
-
-function startMultipleChoice() {
-  document.getElementById("menu").style.display = "none";
-  document.getElementById("game").style.display = "block";
-  document.getElementById("options").innerHTML = '<button onclick="checkAnswer(true)">Kyllä</button><button onclick="checkAnswer(false)">Ei</button>';
-  document.getElementById("answer").style.display = "none";
-  document.getElementById("drag-area").style.display = "none";
-  pickWord();
-}
-
-function startTyping() {
-  document.getElementById("menu").style.display = "none";
-  document.getElementById("game").style.display = "block";
-  document.getElementById("options").innerHTML = '';
-  document.getElementById("answer").style.display = "inline-block";
-  document.getElementById("drag-area").style.display = "none";
-  pickWord();
-}
-
-function startDragDrop() {
-  document.getElementById("menu").style.display = "none";
-  document.getElementById("game").style.display = "block";
-  document.getElementById("options").innerHTML = '';
-  document.getElementById("answer").style.display = "none";
-  document.getElementById("drag-area").style.display = "block";
-  document.getElementById("question").innerText = "Raahaa sana oikeaan laatikkoon!";
-  document.getElementById("drag-area").innerHTML = `
-    <div draggable="true" ondragstart="drag(event)" id="dragword">${words[Math.floor(Math.random() * words.length)].word}</div>
-    <div style="display:flex; justify-content:space-around; margin-top:20px;">
-      <div id="droptrue" ondrop="drop(event, true)" ondragover="allowDrop(event)" style="border:2px solid green; padding:20px; width:100px;">Kaksois</div>
-      <div id="dropfalse" ondrop="drop(event, false)" ondragover="allowDrop(event)" style="border:2px solid red; padding:20px; width:100px;">Ei kaksois</div>
-    </div>`;
-}
-
-function checkAnswer(answer) {
-  if (answer === currentWord.correct) {
-    document.getElementById("feedback").innerText = "Oikein!";
-    score++;
-  } else {
-    document.getElementById("feedback").innerText = "Väärin!";
+// ------- Question bank (generated) -------
+const QBANK = {
+  "Äidinkieli": {
+    "Kaksoiskonsonantit": [
+      {
+        "q": "Missä on kaksoiskonsonantti?",
+        "options": [
+          "kisa",
+          "kissa",
+          "kisahtaa"
+        ],
+        "a": "kissa"
+      },
+      {
+        "q": "Missä on kaksoiskonsonantti?",
+        "options": [
+          "palo",
+          "pallo",
+          "paloa"
+        ],
+        "a": "pallo"
+      },
+      {
+        "q": "Missä on kaksoiskonsonantti?",
+        "options": [
+          "hissi",
+          "hisi",
+          "hiisi"
+        ],
+        "a": "hissi"
+      },
+      {
+        "q": "Missä on kaksoiskonsonantti?",
+        "options": [
+          "mato",
+          "matto",
+          "matoja"
+        ],
+        "a": "matto"
+      },
+      {
+        "q": "Missä on kaksoiskonsonantti?",
+        "options": [
+          "kettu",
+          "ketu",
+          "keto"
+        ],
+        "a": "kettu"
+      },
+      {
+        "q": "Missä on kaksoiskonsonantti?",
+        "options": [
+          "sato",
+          "sattu",
+          "satu"
+        ],
+        "a": "sattu"
+      },
+      {
+        "q": "Missä on kaksoiskonsonantti?",
+        "options": [
+          "kuka",
+          "kukka",
+          "kukkais"
+        ],
+        "a": "kukka"
+      },
+      {
+        "q": "Missä on kaksoiskonsonantti?",
+        "options": [
+          "taka",
+          "takka",
+          "takaa"
+        ],
+        "a": "takka"
+      },
+      {
+        "q": "Missä on kaksoiskonsonantti?",
+        "options": [
+          "jako",
+          "jakko",
+          "jakoa"
+        ],
+        "a": "jakko"
+      },
+      {
+        "q": "Missä on kaksoiskonsonantti?",
+        "options": [
+          "pana",
+          "panna",
+          "pane"
+        ],
+        "a": "panna"
+      }
+    ],
+    "Verbit": [
+      {
+        "q": "Valitse verbi.",
+        "options": [
+          "juosta",
+          "koira",
+          "pöytä"
+        ],
+        "a": "juosta"
+      },
+      {
+        "q": "Valitse verbi.",
+        "options": [
+          "kirjoittaa",
+          "kirja",
+          "kirje"
+        ],
+        "a": "kirjoittaa"
+      },
+      {
+        "q": "Valitse verbi.",
+        "options": [
+          "laulaa",
+          "laulu",
+          "laulaja"
+        ],
+        "a": "laulaa"
+      },
+      {
+        "q": "Valitse verbi.",
+        "options": [
+          "syödä",
+          "ruoka",
+          "haarukka"
+        ],
+        "a": "syödä"
+      },
+      {
+        "q": "Valitse verbi.",
+        "options": [
+          "hypätä",
+          "hyppy",
+          "hylly"
+        ],
+        "a": "hypätä"
+      },
+      {
+        "q": "Valitse verbi.",
+        "options": [
+          "katsoa",
+          "katto",
+          "katu"
+        ],
+        "a": "katsoa"
+      },
+      {
+        "q": "Valitse verbi.",
+        "options": [
+          "rakentaa",
+          "rakennus",
+          "rakkaus"
+        ],
+        "a": "rakentaa"
+      },
+      {
+        "q": "Valitse verbi.",
+        "options": [
+          "uida",
+          "uimarata",
+          "uimari"
+        ],
+        "a": "uida"
+      },
+      {
+        "q": "Valitse verbi.",
+        "options": [
+          "pelata",
+          "pelaaja",
+          "peli"
+        ],
+        "a": "pelata"
+      },
+      {
+        "q": "Valitse verbi.",
+        "options": [
+          "piirtää",
+          "piirros",
+          "piirrin"
+        ],
+        "a": "piirtää"
+      }
+    ],
+    "Adjektiivit": [
+      {
+        "q": "Valitse adjektiivi.",
+        "options": [
+          "nopea",
+          "juosta",
+          "kissa"
+        ],
+        "a": "nopea"
+      },
+      {
+        "q": "Valitse adjektiivi.",
+        "options": [
+          "punainen",
+          "omena",
+          "maalaus"
+        ],
+        "a": "punainen"
+      },
+      {
+        "q": "Valitse adjektiivi.",
+        "options": [
+          "korkea",
+          "talo",
+          "katto"
+        ],
+        "a": "korkea"
+      },
+      {
+        "q": "Valitse adjektiivi.",
+        "options": [
+          "pieni",
+          "piano",
+          "piha"
+        ],
+        "a": "pieni"
+      },
+      {
+        "q": "Valitse adjektiivi.",
+        "options": [
+          "hapan",
+          "leipä",
+          "voi"
+        ],
+        "a": "hapan"
+      },
+      {
+        "q": "Valitse adjektiivi.",
+        "options": [
+          "rauhallinen",
+          "rauha",
+          "rauhan"
+        ],
+        "a": "rauhallinen"
+      },
+      {
+        "q": "Valitse adjektiivi.",
+        "options": [
+          "ihana",
+          "ihminen",
+          "ihmetys"
+        ],
+        "a": "ihana"
+      },
+      {
+        "q": "Valitse adjektiivi.",
+        "options": [
+          "viisas",
+          "viisaus",
+          "viisari"
+        ],
+        "a": "viisas"
+      },
+      {
+        "q": "Valitse adjektiivi.",
+        "options": [
+          "kylmä",
+          "kylmyys",
+          "kylmentää"
+        ],
+        "a": "kylmä"
+      },
+      {
+        "q": "Valitse adjektiivi.",
+        "options": [
+          "tumma",
+          "tummuus",
+          "tummentaa"
+        ],
+        "a": "tumma"
+      }
+    ]
+  },
+  "Matematiikka": {
+    "Yhteenlaskut": [
+      {
+        "q": "7 + 5 = ?",
+        "options": [
+          "11",
+          "12",
+          "13"
+        ],
+        "a": "12"
+      },
+      {
+        "q": "9 + 8 = ?",
+        "options": [
+          "16",
+          "17",
+          "18"
+        ],
+        "a": "17"
+      },
+      {
+        "q": "20 + 13 = ?",
+        "options": [
+          "32",
+          "33",
+          "34"
+        ],
+        "a": "33"
+      },
+      {
+        "q": "100 + 250 = ?",
+        "options": [
+          "340",
+          "350",
+          "360"
+        ],
+        "a": "350"
+      },
+      {
+        "q": "45 + 55 = ?",
+        "options": [
+          "95",
+          "100",
+          "105"
+        ],
+        "a": "100"
+      },
+      {
+        "q": "8 + 27 = ?",
+        "options": [
+          "33",
+          "34",
+          "35"
+        ],
+        "a": "35"
+      },
+      {
+        "q": "14 + 19 = ?",
+        "options": [
+          "32",
+          "33",
+          "34"
+        ],
+        "a": "33"
+      },
+      {
+        "q": "66 + 34 = ?",
+        "options": [
+          "98",
+          "100",
+          "101"
+        ],
+        "a": "100"
+      },
+      {
+        "q": "99 + 1 = ?",
+        "options": [
+          "99",
+          "100",
+          "101"
+        ],
+        "a": "100"
+      },
+      {
+        "q": "250 + 75 = ?",
+        "options": [
+          "315",
+          "320",
+          "325"
+        ],
+        "a": "325"
+      }
+    ],
+    "Kertotaulu": [
+      {
+        "q": "3 × 4 = ?",
+        "options": [
+          "7",
+          "12",
+          "14"
+        ],
+        "a": "12"
+      },
+      {
+        "q": "6 × 7 = ?",
+        "options": [
+          "36",
+          "42",
+          "48"
+        ],
+        "a": "42"
+      },
+      {
+        "q": "9 × 8 = ?",
+        "options": [
+          "64",
+          "72",
+          "81"
+        ],
+        "a": "72"
+      },
+      {
+        "q": "5 × 12 = ?",
+        "options": [
+          "50",
+          "55",
+          "60"
+        ],
+        "a": "60"
+      },
+      {
+        "q": "7 × 7 = ?",
+        "options": [
+          "42",
+          "48",
+          "49"
+        ],
+        "a": "49"
+      },
+      {
+        "q": "11 × 11 = ?",
+        "options": [
+          "111",
+          "121",
+          "131"
+        ],
+        "a": "121"
+      },
+      {
+        "q": "4 × 9 = ?",
+        "options": [
+          "32",
+          "36",
+          "40"
+        ],
+        "a": "36"
+      },
+      {
+        "q": "8 × 8 = ?",
+        "options": [
+          "56",
+          "64",
+          "72"
+        ],
+        "a": "64"
+      },
+      {
+        "q": "12 × 12 = ?",
+        "options": [
+          "132",
+          "142",
+          "144"
+        ],
+        "a": "144"
+      },
+      {
+        "q": "3 × 9 = ?",
+        "options": [
+          "27",
+          "21",
+          "18"
+        ],
+        "a": "27"
+      }
+    ],
+    "Prosentit": [
+      {
+        "q": "Mikä on 50 % luvusta 20?",
+        "options": [
+          "5",
+          "10",
+          "15"
+        ],
+        "a": "10"
+      },
+      {
+        "q": "Mikä on 25 % luvusta 80?",
+        "options": [
+          "10",
+          "15",
+          "20"
+        ],
+        "a": "20"
+      },
+      {
+        "q": "Hinta 100 € nousee 10 %. Uusi hinta?",
+        "options": [
+          "105 €",
+          "110 €",
+          "115 €"
+        ],
+        "a": "110 €"
+      },
+      {
+        "q": "Mikä on 10 % luvusta 250?",
+        "options": [
+          "20",
+          "25",
+          "30"
+        ],
+        "a": "25"
+      },
+      {
+        "q": "Mikä on 5 % luvusta 200?",
+        "options": [
+          "5",
+          "10",
+          "15"
+        ],
+        "a": "10"
+      },
+      {
+        "q": "80 € laskee 25 %. Uusi hinta?",
+        "options": [
+          "60 €",
+          "65 €",
+          "70 €"
+        ],
+        "a": "60 €"
+      },
+      {
+        "q": "40:n 75 % on?",
+        "options": [
+          "25",
+          "30",
+          "35"
+        ],
+        "a": "30"
+      },
+      {
+        "q": "120:n 20 % on?",
+        "options": [
+          "20",
+          "24",
+          "28"
+        ],
+        "a": "24"
+      },
+      {
+        "q": "30:n 10 % on?",
+        "options": [
+          "3",
+          "6",
+          "9"
+        ],
+        "a": "3"
+      },
+      {
+        "q": "200:n 15 % on?",
+        "options": [
+          "25",
+          "30",
+          "35"
+        ],
+        "a": "30"
+      }
+    ]
+  },
+  "Englanti": {
+    "Sanastot": [
+      {
+        "q": "Mikä on 'dog' suomeksi?",
+        "options": [
+          "kissa",
+          "koira",
+          "kana"
+        ],
+        "a": "koira"
+      },
+      {
+        "q": "Mikä on 'cat' suomeksi?",
+        "options": [
+          "kana",
+          "kala",
+          "kissa"
+        ],
+        "a": "kissa"
+      },
+      {
+        "q": "Mikä on 'house' suomeksi?",
+        "options": [
+          "koulu",
+          "talo",
+          "katu"
+        ],
+        "a": "talo"
+      },
+      {
+        "q": "Mikä on 'book' suomeksi?",
+        "options": [
+          "kirja",
+          "kirje",
+          "kirjaamo"
+        ],
+        "a": "kirja"
+      },
+      {
+        "q": "Mikä on 'car' suomeksi?",
+        "options": [
+          "vene",
+          "auto",
+          "juna"
+        ],
+        "a": "auto"
+      },
+      {
+        "q": "Mikä on 'water' suomeksi?",
+        "options": [
+          "vesi",
+          "ilma",
+          "tuli"
+        ],
+        "a": "vesi"
+      },
+      {
+        "q": "Mikä on 'tree' suomeksi?",
+        "options": [
+          "puu",
+          "puuhaa",
+          "puisto"
+        ],
+        "a": "puu"
+      },
+      {
+        "q": "Mikä on 'sun' suomeksi?",
+        "options": [
+          "kuu",
+          "aurinko",
+          "tähti"
+        ],
+        "a": "aurinko"
+      },
+      {
+        "q": "Mikä on 'school' suomeksi?",
+        "options": [
+          "koulu",
+          "kirja",
+          "oppilas"
+        ],
+        "a": "koulu"
+      },
+      {
+        "q": "Mikä on 'friend' suomeksi?",
+        "options": [
+          "ystävä",
+          "vihollinen",
+          "veli"
+        ],
+        "a": "ystävä"
+      }
+    ],
+    "Värit": [
+      {
+        "q": "Mikä väri on 'red'?",
+        "options": [
+          "sininen",
+          "punainen",
+          "keltainen"
+        ],
+        "a": "punainen"
+      },
+      {
+        "q": "Mikä väri on 'blue'?",
+        "options": [
+          "vihreä",
+          "sininen",
+          "musta"
+        ],
+        "a": "sininen"
+      },
+      {
+        "q": "Mikä väri on 'green'?",
+        "options": [
+          "vihreä",
+          "harmaa",
+          "ruskea"
+        ],
+        "a": "vihreä"
+      },
+      {
+        "q": "Mikä väri on 'yellow'?",
+        "options": [
+          "violetti",
+          "keltainen",
+          "oranssi"
+        ],
+        "a": "keltainen"
+      },
+      {
+        "q": "Mikä väri on 'black'?",
+        "options": [
+          "musta",
+          "valkoinen",
+          "pinkki"
+        ],
+        "a": "musta"
+      },
+      {
+        "q": "Mikä väri on 'white'?",
+        "options": [
+          "sininen",
+          "valkoinen",
+          "ruskea"
+        ],
+        "a": "valkoinen"
+      },
+      {
+        "q": "Mikä väri on 'orange'?",
+        "options": [
+          "oranssi",
+          "violetti",
+          "harmaa"
+        ],
+        "a": "oranssi"
+      },
+      {
+        "q": "Mikä väri on 'purple'?",
+        "options": [
+          "pinkki",
+          "violetti",
+          "beige"
+        ],
+        "a": "violetti"
+      },
+      {
+        "q": "Mikä väri on 'brown'?",
+        "options": [
+          "ruskea",
+          "harmaa",
+          "turkoosi"
+        ],
+        "a": "ruskea"
+      },
+      {
+        "q": "Mikä väri on 'pink'?",
+        "options": [
+          "beige",
+          "pinkki",
+          "hopea"
+        ],
+        "a": "pinkki"
+      }
+    ],
+    "Perussanat": [
+      {
+        "q": "Mikä on 'hello' suomeksi?",
+        "options": [
+          "hei",
+          "kiitos",
+          "anteeksi"
+        ],
+        "a": "hei"
+      },
+      {
+        "q": "Mikä on 'thank you' suomeksi?",
+        "options": [
+          "hei",
+          "näkemiin",
+          "kiitos"
+        ],
+        "a": "kiitos"
+      },
+      {
+        "q": "Mikä on 'goodbye' suomeksi?",
+        "options": [
+          "tervetuloa",
+          "näkemiin",
+          "anteeksi"
+        ],
+        "a": "näkemiin"
+      },
+      {
+        "q": "Mikä on 'please' suomeksi?",
+        "options": [
+          "ole hyvä",
+          "kiitos",
+          "hei"
+        ],
+        "a": "ole hyvä"
+      },
+      {
+        "q": "Mikä on 'yes' suomeksi?",
+        "options": [
+          "joo",
+          "ei",
+          "moi"
+        ],
+        "a": "joo"
+      },
+      {
+        "q": "Mikä on 'no' suomeksi?",
+        "options": [
+          "moi",
+          "hei",
+          "ei"
+        ],
+        "a": "ei"
+      },
+      {
+        "q": "Mikä on 'name' suomeksi?",
+        "options": [
+          "nimi",
+          "maha",
+          "nimiö"
+        ],
+        "a": "nimi"
+      },
+      {
+        "q": "Mikä on 'food' suomeksi?",
+        "options": [
+          "juoma",
+          "ruoka",
+          "koulu"
+        ],
+        "a": "ruoka"
+      },
+      {
+        "q": "Mikä on 'city' suomeksi?",
+        "options": [
+          "kaupunki",
+          "kylä",
+          "maa"
+        ],
+        "a": "kaupunki"
+      },
+      {
+        "q": "Mikä on 'family' suomeksi?",
+        "options": [
+          "perhe",
+          "ystävä",
+          "koulu"
+        ],
+        "a": "perhe"
+      }
+    ]
+  },
+  "Historia": {
+    "Kuningaat": [
+      {
+        "q": "Kuka perusti Vaasa-suvun?",
+        "options": [
+          "Kustaa Vaasa",
+          "Kaarle XII",
+          "Kustaa III"
+        ],
+        "a": "Kustaa Vaasa"
+      },
+      {
+        "q": "Kuka oli sotaisa kuningas 1600-luvulla?",
+        "options": [
+          "Kustaa II Aadolf",
+          "Kustaa III",
+          "Erik XIV"
+        ],
+        "a": "Kustaa II Aadolf"
+      },
+      {
+        "q": "Kuka johti Ruotsia suuren Pohjan sodan aikana?",
+        "options": [
+          "Kaarle XII",
+          "Kustaa Vaasa",
+          "Fredrik I"
+        ],
+        "a": "Kaarle XII"
+      },
+      {
+        "q": "Kuka hallitsi 1700-luvun lopulla Ruotsia?",
+        "options": [
+          "Kustaa III",
+          "Kustaa II Aadolf",
+          "Kaarle X"
+        ],
+        "a": "Kustaa III"
+      },
+      {
+        "q": "Kuka oli Englannin kuningatar 1500-luvun lopulla?",
+        "options": [
+          "Elisabet I",
+          "Viktoria",
+          "Maria I"
+        ],
+        "a": "Elisabet I"
+      },
+      {
+        "q": "Pitkäaikainen brittihallitsija 1800-luvulla?",
+        "options": [
+          "Viktoria",
+          "Elisabet II",
+          "Anna"
+        ],
+        "a": "Viktoria"
+      },
+      {
+        "q": "Kuningas, jolla oli kuusi vaimoa?",
+        "options": [
+          "Henrik VIII",
+          "Henrik V",
+          "Edward III"
+        ],
+        "a": "Henrik VIII"
+      },
+      {
+        "q": "'Aurinkokuningas'?",
+        "options": [
+          "Ludvig XIV",
+          "Ludvig XVI",
+          "Filip II"
+        ],
+        "a": "Ludvig XIV"
+      },
+      {
+        "q": "Ranskan kuningas vallankumouksen aikaan?",
+        "options": [
+          "Ludvig XVI",
+          "Ludvig XIV",
+          "Napoleon"
+        ],
+        "a": "Ludvig XVI"
+      },
+      {
+        "q": "Nykyinen (2000-luku) Ruotsin kuningas?",
+        "options": [
+          "Kaarle XVI Kustaa",
+          "Kustaa VI Aadolf",
+          "Erik XIV"
+        ],
+        "a": "Kaarle XVI Kustaa"
+      }
+    ],
+    "Keksinnöt": [
+      {
+        "q": "Sähkölampun keksijä?",
+        "options": [
+          "Thomas Edison",
+          "Nikola Tesla",
+          "James Watt"
+        ],
+        "a": "Thomas Edison"
+      },
+      {
+        "q": "Puhelimen keksijä?",
+        "options": [
+          "Alexander Graham Bell",
+          "Guglielmo Marconi",
+          "Edison"
+        ],
+        "a": "Alexander Graham Bell"
+      },
+      {
+        "q": "Radion keksijä?",
+        "options": [
+          "Guglielmo Marconi",
+          "Heinrich Hertz",
+          "Faraday"
+        ],
+        "a": "Guglielmo Marconi"
+      },
+      {
+        "q": "Painokone Euroopassa?",
+        "options": [
+          "Johannes Gutenberg",
+          "Galileo",
+          "Kepler"
+        ],
+        "a": "Johannes Gutenberg"
+      },
+      {
+        "q": "Lentokoneen keksijät?",
+        "options": [
+          "Wrightin veljekset",
+          "Lindbergh",
+          "Sikorsky"
+        ],
+        "a": "Wrightin veljekset"
+      },
+      {
+        "q": "Höyrykoneen parantaja?",
+        "options": [
+          "James Watt",
+          "Robert Fulton",
+          "Stephenson"
+        ],
+        "a": "James Watt"
+      },
+      {
+        "q": "Lennätin ja koodi?",
+        "options": [
+          "Samuel Morse",
+          "Marconi",
+          "Bell"
+        ],
+        "a": "Samuel Morse"
+      },
+      {
+        "q": "Vaihtosähköjärjestelmä?",
+        "options": [
+          "Nikola Tesla",
+          "Edison",
+          "Volta"
+        ],
+        "a": "Nikola Tesla"
+      },
+      {
+        "q": "Sähköparisto?",
+        "options": [
+          "Alessandro Volta",
+          "Ohm",
+          "Ampère"
+        ],
+        "a": "Alessandro Volta"
+      },
+      {
+        "q": "Penisilliini?",
+        "options": [
+          "Alexander Fleming",
+          "Pasteur",
+          "Jenner"
+        ],
+        "a": "Alexander Fleming"
+      }
+    ],
+    "Tapahtumat": [
+      {
+        "q": "Suomen itsenäistyminen?",
+        "options": [
+          "1917",
+          "1939",
+          "1945"
+        ],
+        "a": "1917"
+      },
+      {
+        "q": "Toisen maailmansodan alku?",
+        "options": [
+          "1939",
+          "1914",
+          "1941"
+        ],
+        "a": "1939"
+      },
+      {
+        "q": "Ensimmäisen maailmansodan alku?",
+        "options": [
+          "1914",
+          "1918",
+          "1905"
+        ],
+        "a": "1914"
+      },
+      {
+        "q": "Ensimmäisen maailmansodan loppu?",
+        "options": [
+          "1918",
+          "1914",
+          "1920"
+        ],
+        "a": "1918"
+      },
+      {
+        "q": "Länsi-Rooman romahdus?",
+        "options": [
+          "476",
+          "800",
+          "1453"
+        ],
+        "a": "476"
+      },
+      {
+        "q": "Bysantin kukistuminen?",
+        "options": [
+          "1453",
+          "1204",
+          "1066"
+        ],
+        "a": "1453"
+      },
+      {
+        "q": "Ranskan vallankumous alkoi?",
+        "options": [
+          "1789",
+          "1776",
+          "1815"
+        ],
+        "a": "1789"
+      },
+      {
+        "q": "Kolumbus saapui Amerikkaan?",
+        "options": [
+          "1492",
+          "1517",
+          "1521"
+        ],
+        "a": "1492"
+      },
+      {
+        "q": "Talvisodan alku?",
+        "options": [
+          "1939",
+          "1941",
+          "1917"
+        ],
+        "a": "1939"
+      },
+      {
+        "q": "Berliinin muuri murtui?",
+        "options": [
+          "1989",
+          "1991",
+          "1979"
+        ],
+        "a": "1989"
+      }
+    ]
+  },
+  "Biologia": {
+    "Eläimet": [
+      {
+        "q": "Mikä on nisäkäs?",
+        "options": [
+          "siili",
+          "sammakko",
+          "silakka"
+        ],
+        "a": "siili"
+      },
+      {
+        "q": "Petoeläin?",
+        "options": [
+          "lammas",
+          "kettu",
+          "hirvi"
+        ],
+        "a": "kettu"
+      },
+      {
+        "q": "Suurin maaeläin?",
+        "options": [
+          "norsu",
+          "sarvikuono",
+          "virtahepo"
+        ],
+        "a": "norsu"
+      },
+      {
+        "q": "Pingviini on...",
+        "options": [
+          "lintu",
+          "matelija",
+          "nisäkäs"
+        ],
+        "a": "lintu"
+      },
+      {
+        "q": "Talvehtii horroksessa?",
+        "options": [
+          "karhu",
+          "poro",
+          "nauta"
+        ],
+        "a": "karhu"
+      },
+      {
+        "q": "Kalan hengityselin?",
+        "options": [
+          "kidukset",
+          "keuhkot",
+          "iho"
+        ],
+        "a": "kidukset"
+      },
+      {
+        "q": "Jyrsijä?",
+        "options": [
+          "orava",
+          "kettu",
+          "konna"
+        ],
+        "a": "orava"
+      },
+      {
+        "q": "Nopein maaeläin?",
+        "options": [
+          "gepard",
+          "leijona",
+          "gaselli"
+        ],
+        "a": "gepard"
+      },
+      {
+        "q": "Lentävä nisäkäs?",
+        "options": [
+          "lepakko",
+          "varis",
+          "mehiläinen"
+        ],
+        "a": "lepakko"
+      },
+      {
+        "q": "Isoin kissaeläin?",
+        "options": [
+          "tiikeri",
+          "leijona",
+          "leopardi"
+        ],
+        "a": "tiikeri"
+      }
+    ],
+    "Kasvit": [
+      {
+        "q": "Havupuu?",
+        "options": [
+          "kuusi",
+          "koivu",
+          "pihlaja"
+        ],
+        "a": "kuusi"
+      },
+      {
+        "q": "Yhteyttää eniten?",
+        "options": [
+          "lehdet",
+          "juuret",
+          "varsi"
+        ],
+        "a": "lehdet"
+      },
+      {
+        "q": "Kasvin lisääntymiselin?",
+        "options": [
+          "kukka/siemen",
+          "varsi",
+          "lehti"
+        ],
+        "a": "kukka/siemen"
+      },
+      {
+        "q": "Marja?",
+        "options": [
+          "mustikka",
+          "omena",
+          "päärynä"
+        ],
+        "a": "mustikka"
+      },
+      {
+        "q": "Viljakasvi?",
+        "options": [
+          "ruis",
+          "ruisleipä",
+          "ruoko"
+        ],
+        "a": "ruis"
+      },
+      {
+        "q": "Ottaa vettä maasta?",
+        "options": [
+          "juuri",
+          "lehti",
+          "kukinto"
+        ],
+        "a": "juuri"
+      },
+      {
+        "q": "Lehtipuu?",
+        "options": [
+          "koivu",
+          "mänty",
+          "kuusi"
+        ],
+        "a": "koivu"
+      },
+      {
+        "q": "Missä siemen kehittyy?",
+        "options": [
+          "hedelmässä",
+          "lehdessä",
+          "juuressa"
+        ],
+        "a": "hedelmässä"
+      },
+      {
+        "q": "Kasvi tarvitsee yhteyttämiseen...",
+        "options": [
+          "valoa",
+          "sokeria",
+          "kiveä"
+        ],
+        "a": "valoa"
+      },
+      {
+        "q": "Perenna on...",
+        "options": [
+          "monivuotinen",
+          "yksivuotinen",
+          "pensaskasvi"
+        ],
+        "a": "monivuotinen"
+      }
+    ],
+    "Ihminen": [
+      {
+        "q": "Mikä elin pumppaa verta?",
+        "options": [
+          "sydän",
+          "keuhkot",
+          "maksa"
+        ],
+        "a": "sydän"
+      },
+      {
+        "q": "Hengitys kaasujen vaihto?",
+        "options": [
+          "keuhkorakkulat",
+          "mahalaukku",
+          "munuaiset"
+        ],
+        "a": "keuhkorakkulat"
+      },
+      {
+        "q": "Suodattaa verta?",
+        "options": [
+          "munuaiset",
+          "maksa",
+          "perna"
+        ],
+        "a": "munuaiset"
+      },
+      {
+        "q": "Suurin elin?",
+        "options": [
+          "iho",
+          "sydän",
+          "aivot"
+        ],
+        "a": "iho"
+      },
+      {
+        "q": "Mikä aisti havaitsee valon?",
+        "options": [
+          "näkö",
+          "kuulo",
+          "maku"
+        ],
+        "a": "näkö"
+      },
+      {
+        "q": "Insuliinin tuottaa?",
+        "options": [
+          "haima",
+          "maksa",
+          "perna"
+        ],
+        "a": "haima"
+      },
+      {
+        "q": "Ravinto pilkkoutuu pääosin?",
+        "options": [
+          "ohutsuoli",
+          "paksusuoli",
+          "perna"
+        ],
+        "a": "ohutsuoli"
+      },
+      {
+        "q": "Mikä luu suojaa aivoja?",
+        "options": [
+          "kallon luut",
+          "rintalasta",
+          "lantio"
+        ],
+        "a": "kallon luut"
+      },
+      {
+        "q": "Punaiset verisolut kuljettavat...",
+        "options": [
+          "happea",
+          "sokeria",
+          "kalsiumia"
+        ],
+        "a": "happea"
+      },
+      {
+        "q": "Aivojen osa tasapainolle?",
+        "options": [
+          "pikkuaivot",
+          "isilohko",
+          "aivorunko"
+        ],
+        "a": "pikkuaivot"
+      }
+    ]
+  },
+  "Maantieto": {
+    "Kartanlukutaito": [
+      {
+        "q": "Pohjoisnuoli kartalla näyttää...",
+        "options": [
+          "pohjoisen",
+          "etelän",
+          "idän"
+        ],
+        "a": "pohjoisen"
+      },
+      {
+        "q": "Leveyspiirit kulkevat...",
+        "options": [
+          "itä-länsi",
+          "pohjois-etelä",
+          "diagonaali"
+        ],
+        "a": "itä-länsi"
+      },
+      {
+        "q": "Pituuspiirit kulkevat...",
+        "options": [
+          "pohjois-etelä",
+          "itä-länsi",
+          "pohjois-länsi"
+        ],
+        "a": "pohjois-etelä"
+      },
+      {
+        "q": "Mikä on ekvaattori?",
+        "options": [
+          "0° leveyspiiri",
+          "0° pituuspiiri",
+          "kääntymispiiri"
+        ],
+        "a": "0° leveyspiiri"
+      },
+      {
+        "q": "Mitä mittakaava kertoo?",
+        "options": [
+          "etäisyyden suhteena",
+          "sään",
+          "väestön"
+        ],
+        "a": "etäisyyden suhteena"
+      },
+      {
+        "q": "Korkeuskäyrät kuvaavat...",
+        "options": [
+          "maaston korkeutta",
+          "sateita",
+          "teitä"
+        ],
+        "a": "maaston korkeutta"
+      },
+      {
+        "q": "Karttamerkki sininen viiva on usein...",
+        "options": [
+          "joki",
+          "tie",
+          "vuori"
+        ],
+        "a": "joki"
+      },
+      {
+        "q": "Kompassi osoittaa...",
+        "options": [
+          "magneettisen pohjoisen",
+          "maant. pohjoisen",
+          "etelän"
+        ],
+        "a": "magneettisen pohjoisen"
+      },
+      {
+        "q": "GPS käyttää...",
+        "options": [
+          "satelliitteja",
+          "tukiasemia",
+          "merkkipaaluja"
+        ],
+        "a": "satelliitteja"
+      },
+      {
+        "q": "Topografinen kartta näyttää...",
+        "options": [
+          "maaston muodot",
+          "maaperän kemian",
+          "ilmaston"
+        ],
+        "a": "maaston muodot"
+      }
+    ],
+    "Manneralueet": [
+      {
+        "q": "Suurin manner?",
+        "options": [
+          "Aasia",
+          "Afrikka",
+          "Eurooppa"
+        ],
+        "a": "Aasia"
+      },
+      {
+        "q": "Väkirikkain maanosa?",
+        "options": [
+          "Aasia",
+          "Afrikka",
+          "Amerikka"
+        ],
+        "a": "Aasia"
+      },
+      {
+        "q": "Sahara sijaitsee...",
+        "options": [
+          "Afrikassa",
+          "Aasiassa",
+          "Euroopassa"
+        ],
+        "a": "Afrikassa"
+      },
+      {
+        "q": "Amazon-joen manner?",
+        "options": [
+          "Etelä-Amerikka",
+          "Pohjois-Amerikka",
+          "Afrikka"
+        ],
+        "a": "Etelä-Amerikka"
+      },
+      {
+        "q": "Alpit sijaitsevat...",
+        "options": [
+          "Euroopassa",
+          "Aasiassa",
+          "Oseaniassa"
+        ],
+        "a": "Euroopassa"
+      },
+      {
+        "q": "Andit ovat...",
+        "options": [
+          "vuoristo",
+          "joki",
+          "autiomaa"
+        ],
+        "a": "vuoristo"
+      },
+      {
+        "q": "Australian pääkaupunki?",
+        "options": [
+          "Canberra",
+          "Sydney",
+          "Melbourne"
+        ],
+        "a": "Canberra"
+      },
+      {
+        "q": "Arktinen alue on...",
+        "options": [
+          "pohjoisnavan ympärillä",
+          "etelänavan ympärillä",
+          "päiväntasaajalla"
+        ],
+        "a": "pohjoisnavan ympärillä"
+      },
+      {
+        "q": "Niagaran putoukset sijaitsevat...",
+        "options": [
+          "USA/Kanada",
+          "Brasilia/Argentiina",
+          "Norja/Ruotsi"
+        ],
+        "a": "USA/Kanada"
+      },
+      {
+        "q": "Ural-vuoret erottavat...",
+        "options": [
+          "Euroopan ja Aasian",
+          "Aasian ja Afrikan",
+          "Amerikat"
+        ],
+        "a": "Euroopan ja Aasian"
+      }
+    ],
+    "Suomi": [
+      {
+        "q": "Suomen pääkaupunki?",
+        "options": [
+          "Helsinki",
+          "Turku",
+          "Tampere"
+        ],
+        "a": "Helsinki"
+      },
+      {
+        "q": "Suurin järvi Suomessa?",
+        "options": [
+          "Saimaa",
+          "Päijänne",
+          "Inari"
+        ],
+        "a": "Saimaa"
+      },
+      {
+        "q": "Korkein tunturi Suomessa?",
+        "options": [
+          "Halti",
+          "Saana",
+          "Yllästunturi"
+        ],
+        "a": "Halti"
+      },
+      {
+        "q": "Suurin kaupunki?",
+        "options": [
+          "Helsinki",
+          "Espoo",
+          "Tampere"
+        ],
+        "a": "Helsinki"
+      },
+      {
+        "q": "Rajanaapuri idässä?",
+        "options": [
+          "Venäjä",
+          "Ruotsi",
+          "Norja"
+        ],
+        "a": "Venäjä"
+      },
+      {
+        "q": "Maakuntia on noin...",
+        "options": [
+          "19",
+          "12",
+          "25"
+        ],
+        "a": "19"
+      },
+      {
+        "q": "Lapin pääkaupunki?",
+        "options": [
+          "Rovaniemi",
+          "Oulu",
+          "Kemi"
+        ],
+        "a": "Rovaniemi"
+      },
+      {
+        "q": "Ahvenanmaan pääkaupunki?",
+        "options": [
+          "Maarianhamina",
+          "Turku",
+          "Vaasa"
+        ],
+        "a": "Maarianhamina"
+      },
+      {
+        "q": "Suomen pisin joki?",
+        "options": [
+          "Kemijoki",
+          "Oulujoki",
+          "Vantaanjoki"
+        ],
+        "a": "Kemijoki"
+      },
+      {
+        "q": "Euro on käytössä vuodesta...",
+        "options": [
+          "2002",
+          "1999",
+          "2004"
+        ],
+        "a": "2002"
+      }
+    ]
+  },
+  "Fysiikka": {
+    "Voimat ja liike": [
+      {
+        "q": "Voiman yksikkö?",
+        "options": [
+          "newton (N)",
+          "joule (J)",
+          "watti (W)"
+        ],
+        "a": "newton (N)"
+      },
+      {
+        "q": "Nopeus = matka / ...",
+        "options": [
+          "aika",
+          "energia",
+          "massa"
+        ],
+        "a": "aika"
+      },
+      {
+        "q": "Painovoima vetää kohti...",
+        "options": [
+          "Maan keskustaa",
+          "Aurinkoa",
+          "Pohjoista"
+        ],
+        "a": "Maan keskustaa"
+      },
+      {
+        "q": "Kitka on...",
+        "options": [
+          "liikettä vastustava",
+          "liikettä kiihdyttävä",
+          "energia"
+        ],
+        "a": "liikettä vastustava"
+      },
+      {
+        "q": "Tasainen liike tarkoittaa...",
+        "options": [
+          "vakio nopeus",
+          "nolla nopeus",
+          "kiihtyvyys"
+        ],
+        "a": "vakio nopeus"
+      },
+      {
+        "q": "Kiihtyvyys kuvaa...",
+        "options": [
+          "nopeuden muutosta",
+          "matkan pituutta",
+          "massaa"
+        ],
+        "a": "nopeuden muutosta"
+      },
+      {
+        "q": "Liikemäärä = massa × ...",
+        "options": [
+          "nopeus",
+          "aika",
+          "energia"
+        ],
+        "a": "nopeus"
+      },
+      {
+        "q": "Voimanuoli näyttää...",
+        "options": [
+          "suunnan ja suuruuden",
+          "massan",
+          "ajan"
+        ],
+        "a": "suunnan ja suuruuden"
+      },
+      {
+        "q": "Paino = massa × ...",
+        "options": [
+          "putoamiskiihtyvyys",
+          "nopeus",
+          "aika"
+        ],
+        "a": "putoamiskiihtyvyys"
+      },
+      {
+        "q": "Tukivoima vaikuttaa...",
+        "options": [
+          "pinnan suunnassa",
+          "pinnan suhteen kohtisuorasti",
+          "ei lainkaan"
+        ],
+        "a": "pinnan suhteen kohtisuorasti"
+      }
+    ],
+    "Ääni ja valo": [
+      {
+        "q": "Äänen taajuuden yksikkö?",
+        "options": [
+          "hertsi (Hz)",
+          "joule (J)",
+          "pascal (Pa)"
+        ],
+        "a": "hertsi (Hz)"
+      },
+      {
+        "q": "Valon nopeus tyhjiössä on noin...",
+        "options": [
+          "3×10^8 m/s",
+          "3×10^6 m/s",
+          "3×10^5 m/s"
+        ],
+        "a": "3×10^8 m/s"
+      },
+      {
+        "q": "Mikä aisti havaitsee valon?",
+        "options": [
+          "näkö",
+          "kuulo",
+          "tunteminen"
+        ],
+        "a": "näkö"
+      },
+      {
+        "q": "Heijastuslaki koskee...",
+        "options": [
+          "valon kulmaa",
+          "massaa",
+          "sähköä"
+        ],
+        "a": "valon kulmaa"
+      },
+      {
+        "q": "Ääni on...",
+        "options": [
+          "värähtelyä aineessa",
+          "sähkövirtaa",
+          "valohiukkasia"
+        ],
+        "a": "värähtelyä aineessa"
+      },
+      {
+        "q": "Valo taittuu kun...",
+        "options": [
+          "väliaine vaihtuu",
+          "nopeus kasvaa",
+          "massa muuttuu"
+        ],
+        "a": "väliaine vaihtuu"
+      },
+      {
+        "q": "Ihminen kuulee n. ...",
+        "options": [
+          "20–20 000 Hz",
+          "2–200 Hz",
+          "200–2000 Hz"
+        ],
+        "a": "20–20 000 Hz"
+      },
+      {
+        "q": "Peili...",
+        "options": [
+          "heijastaa valoa",
+          "absorboi ääntä",
+          "luo sähköä"
+        ],
+        "a": "heijastaa valoa"
+      },
+      {
+        "q": "Prisma...",
+        "options": [
+          "hajottaa valon",
+          "vahvistaa äänen",
+          "punnitsee massan"
+        ],
+        "a": "hajottaa valon"
+      },
+      {
+        "q": "Valon värit yhdessä näyttävät...",
+        "options": [
+          "valkoiselta",
+          "musta",
+          "siniseltä"
+        ],
+        "a": "valkoiselta"
+      }
+    ],
+    "Sähkö ja magnetismi": [
+      {
+        "q": "Sähkövirran yksikkö?",
+        "options": [
+          "ampeeri (A)",
+          "voltti (V)",
+          "ohmi (Ω)"
+        ],
+        "a": "ampeeri (A)"
+      },
+      {
+        "q": "Jännite kuvaa...",
+        "options": [
+          "potentiaaliero",
+          "virran suuruutta",
+          "vastusta"
+        ],
+        "a": "potentiaaliero"
+      },
+      {
+        "q": "Ohmin laki: U = ...",
+        "options": [
+          "R × I",
+          "I × t",
+          "m × g"
+        ],
+        "a": "R × I"
+      },
+      {
+        "q": "Johde on...",
+        "options": [
+          "hyvin sähköä johtava",
+          "eriste",
+          "magneetti"
+        ],
+        "a": "hyvin sähköä johtava"
+      },
+      {
+        "q": "Magneetin navat ovat...",
+        "options": [
+          "N ja S",
+          "+ ja -",
+          "E ja W"
+        ],
+        "a": "N ja S"
+      },
+      {
+        "q": "Paristo tuottaa...",
+        "options": [
+          "tasavirtaa",
+          "vaihtovirtaa",
+          "magnetismia"
+        ],
+        "a": "tasavirtaa"
+      },
+      {
+        "q": "Generaattori tuottaa...",
+        "options": [
+          "sähköä liikkeestä",
+          "lämpöä",
+          "valoa"
+        ],
+        "a": "sähköä liikkeestä"
+      },
+      {
+        "q": "Sähkön teho yksikkö?",
+        "options": [
+          "watti (W)",
+          "newton (N)",
+          "pascal (Pa)"
+        ],
+        "a": "watti (W)"
+      },
+      {
+        "q": "Sähkömagneetti toimii...",
+        "options": [
+          "virtaa kelassa",
+          "magnetoimalla veden",
+          "lämpötilalla"
+        ],
+        "a": "virtaa kelassa"
+      },
+      {
+        "q": "Eristin on...",
+        "options": [
+          "huonosti johtava",
+          "hyvin johtava",
+          "magneettinen"
+        ],
+        "a": "huonosti johtava"
+      }
+    ]
+  },
+  "Kemia": {
+    "Aineet ja ominaisuudet": [
+      {
+        "q": "Veden kemiallinen kaava?",
+        "options": [
+          "H2O",
+          "CO2",
+          "O2"
+        ],
+        "a": "H2O"
+      },
+      {
+        "q": "Suolan kaava?",
+        "options": [
+          "NaCl",
+          "KCl",
+          "CaCO3"
+        ],
+        "a": "NaCl"
+      },
+      {
+        "q": "Kulta on...",
+        "options": [
+          "metalli",
+          "epämetalli",
+          "puolijohde"
+        ],
+        "a": "metalli"
+      },
+      {
+        "q": "Hiilidioksidi on...",
+        "options": [
+          "kaasu",
+          "neste",
+          "kiinteä"
+        ],
+        "a": "kaasu"
+      },
+      {
+        "q": "pH < 7 tarkoittaa...",
+        "options": [
+          "happamuutta",
+          "emäksisyyttä",
+          "neutraalia"
+        ],
+        "a": "happamuutta"
+      },
+      {
+        "q": "pH = 7 on...",
+        "options": [
+          "neutraali",
+          "hapan",
+          "emäksinen"
+        ],
+        "a": "neutraali"
+      },
+      {
+        "q": "Tislaus erottaa aineet...",
+        "options": [
+          "kiehumispisteen mukaan",
+          "tiheyden",
+          "värin"
+        ],
+        "a": "kiehumispisteen mukaan"
+      },
+      {
+        "q": "Tiheys = massa / ...",
+        "options": [
+          "tilavuus",
+          "pituus",
+          "aika"
+        ],
+        "a": "tilavuus"
+      },
+      {
+        "q": "Happi on...",
+        "options": [
+          "alkuaine",
+          "yhdiste",
+          "seos"
+        ],
+        "a": "alkuaine"
+      },
+      {
+        "q": "Teräs on...",
+        "options": [
+          "seos",
+          "yhdiste",
+          "alkuaine"
+        ],
+        "a": "seos"
+      }
+    ],
+    "Jaksollinen järjestelmä": [
+      {
+        "q": "H:n nimi?",
+        "options": [
+          "vety",
+          "helium",
+          "happi"
+        ],
+        "a": "vety"
+      },
+      {
+        "q": "He:n nimi?",
+        "options": [
+          "helium",
+          "happi",
+          "hiili"
+        ],
+        "a": "helium"
+      },
+      {
+        "q": "O:n nimi?",
+        "options": [
+          "happi",
+          "helium",
+          "kalsium"
+        ],
+        "a": "happi"
+      },
+      {
+        "q": "C:n nimi?",
+        "options": [
+          "hiili",
+          "koboltti",
+          "kalsium"
+        ],
+        "a": "hiili"
+      },
+      {
+        "q": "Na on...",
+        "options": [
+          "natrium",
+          "neon",
+          "nikkeli"
+        ],
+        "a": "natrium"
+      },
+      {
+        "q": "Cl on...",
+        "options": [
+          "kloori",
+          "kromi",
+          "kalsium"
+        ],
+        "a": "kloori"
+      },
+      {
+        "q": "Fe on...",
+        "options": [
+          "rauta",
+          "fluori",
+          "fosfori"
+        ],
+        "a": "rauta"
+      },
+      {
+        "q": "Au on...",
+        "options": [
+          "kulta",
+          "hopea",
+          "kupari"
+        ],
+        "a": "kulta"
+      },
+      {
+        "q": "Ag on...",
+        "options": [
+          "hopea",
+          "argon",
+          "alumiini"
+        ],
+        "a": "hopea"
+      },
+      {
+        "q": "K on...",
+        "options": [
+          "kalium",
+          "kadmium",
+          "kalsium"
+        ],
+        "a": "kalium"
+      }
+    ],
+    "Reaktiot": [
+      {
+        "q": "Palaminen vaatii...",
+        "options": [
+          "happea",
+          "typpeä",
+          "heliumia"
+        ],
+        "a": "happea"
+      },
+      {
+        "q": "Ruostuminen on...",
+        "options": [
+          "hapettumista",
+          "pelkistymistä",
+          "neutraalia"
+        ],
+        "a": "hapettumista"
+      },
+      {
+        "q": "Eksoterminen reaktio...",
+        "options": [
+          "vapauttaa lämpöä",
+          "sitouttaa lämpöä",
+          "ei vaikuta"
+        ],
+        "a": "vapauttaa lämpöä"
+      },
+      {
+        "q": "Kemiallinen reaktio muuttaa...",
+        "options": [
+          "aineita toisiksi",
+          "massan energiaksi",
+          "ajan"
+        ],
+        "a": "aineita toisiksi"
+      },
+      {
+        "q": "Katalyytti...",
+        "options": [
+          "nopeuttaa reaktiota",
+          "hidastaa reaktiota",
+          "kuluttaa reaktiota"
+        ],
+        "a": "nopeuttaa reaktiota"
+      },
+      {
+        "q": "Hapettuminen tarkoittaa...",
+        "options": [
+          "elektronien luovutusta",
+          "elektronien vastaanottoa",
+          "protonien luovutusta"
+        ],
+        "a": "elektronien luovutusta"
+      },
+      {
+        "q": "Happo + emäs →",
+        "options": [
+          "suola + vesi",
+          "kaasu",
+          "metalli"
+        ],
+        "a": "suola + vesi"
+      },
+      {
+        "q": "Endoterminen reaktio...",
+        "options": [
+          "sitouttaa lämpöä",
+          "vapauttaa lämpöä",
+          "ei vaikuta"
+        ],
+        "a": "sitouttaa lämpöä"
+      },
+      {
+        "q": "Reaktionopeuteen vaikuttaa mm.",
+        "options": [
+          "lämpötila",
+          "kuu",
+          "tuuli"
+        ],
+        "a": "lämpötila"
+      },
+      {
+        "q": "Massan säilymislaki...",
+        "options": [
+          "massa säilyy",
+          "massa katoaa",
+          "massa kasvaa"
+        ],
+        "a": "massa säilyy"
+      }
+    ]
+  },
+  "Yhteiskuntaoppi": {
+    "Demokratia": [
+      {
+        "q": "Demokratiassa valta kuuluu...",
+        "options": [
+          "kansalle",
+          "kuninkaalle",
+          "armeijalle"
+        ],
+        "a": "kansalle"
+      },
+      {
+        "q": "Eduskuntaan valitaan...",
+        "options": [
+          "kansanedustajia",
+          "ministereitä",
+          "tuomareita"
+        ],
+        "a": "kansanedustajia"
+      },
+      {
+        "q": "Äänioikeus Suomessa alkaa...",
+        "options": [
+          "18 v",
+          "16 v",
+          "21 v"
+        ],
+        "a": "18 v"
+      },
+      {
+        "q": "Kunnissa päätöksiä tekee...",
+        "options": [
+          "valtuusto",
+          "hovi",
+          "armeija"
+        ],
+        "a": "valtuusto"
+      },
+      {
+        "q": "Perustuslaki turvaa...",
+        "options": [
+          "perusoikeudet",
+          "veroprosentin",
+          "sään"
+        ],
+        "a": "perusoikeudet"
+      },
+      {
+        "q": "Presidentti valitaan...",
+        "options": [
+          "vaaleilla",
+          "eduskunnassa",
+          "valtioneuvostossa"
+        ],
+        "a": "vaaleilla"
+      },
+      {
+        "q": "Kansalaisaloite vaatii allekirjoituksia...",
+        "options": [
+          "50 000",
+          "5 000",
+          "500 000"
+        ],
+        "a": "50 000"
+      },
+      {
+        "q": "Media on osa...",
+        "options": [
+          "julkista keskustelua",
+          "tuomioistuinta",
+          "kirkkoa"
+        ],
+        "a": "julkista keskustelua"
+      },
+      {
+        "q": "Puolue on...",
+        "options": [
+          "poliittinen yhdistys",
+          "urheiluseura",
+          "yritys"
+        ],
+        "a": "poliittinen yhdistys"
+      },
+      {
+        "q": "Oikeusvaltio tarkoittaa...",
+        "options": [
+          "lain noudattamista",
+          "rahan valtaa",
+          "armeijan valtaa"
+        ],
+        "a": "lain noudattamista"
+      }
+    ],
+    "Talous": [
+      {
+        "q": "Budjetti on...",
+        "options": [
+          "talousarvio",
+          "lainan korko",
+          "tulovero"
+        ],
+        "a": "talousarvio"
+      },
+      {
+        "q": "Inflaatio on...",
+        "options": [
+          "hintojen nousu",
+          "hintojen lasku",
+          "veron nosto"
+        ],
+        "a": "hintojen nousu"
+      },
+      {
+        "q": "Palkka on...",
+        "options": [
+          "työkorvaus",
+          "vero",
+          "laina"
+        ],
+        "a": "työkorvaus"
+      },
+      {
+        "q": "Veroja maksaa...",
+        "options": [
+          "kansalaiset ja yritykset",
+          "vain yritykset",
+          "vain valtio"
+        ],
+        "a": "kansalaiset ja yritykset"
+      },
+      {
+        "q": "Korko on...",
+        "options": [
+          "rahan hinta",
+          "veron osuus",
+          "palkan sivukulu"
+        ],
+        "a": "rahan hinta"
+      },
+      {
+        "q": "Säästäminen on...",
+        "options": [
+          "tulojen osan tallettamista",
+          "velan ottoa",
+          "verojen maksua"
+        ],
+        "a": "tulojen osan tallettamista"
+      },
+      {
+        "q": "Yritys myy...",
+        "options": [
+          "tuotteita/palveluja",
+          "ääniä",
+          "lakeja"
+        ],
+        "a": "tuotteita/palveluja"
+      },
+      {
+        "q": "Kysyntä ja tarjonta vaikuttavat...",
+        "options": [
+          "hintaaan",
+          "säätilaan",
+          "äänioikeuteen"
+        ],
+        "a": "hintaaan"
+      },
+      {
+        "q": "Luotto on...",
+        "options": [
+          "laina",
+          "vero",
+          "osinko"
+        ],
+        "a": "laina"
+      },
+      {
+        "q": "Pääoma on...",
+        "options": [
+          "varallisuutta",
+          "veroaste",
+          "budjetti"
+        ],
+        "a": "varallisuutta"
+      }
+    ],
+    "Lait ja oikeudet": [
+      {
+        "q": "Perusoikeus on...",
+        "options": [
+          "perustuslain turvaama oikeus",
+          "kunnan määräys",
+          "yrityksen sääntö"
+        ],
+        "a": "perustuslain turvaama oikeus"
+      },
+      {
+        "q": "Tuomioistuin antaa...",
+        "options": [
+          "tuomion",
+          "lakialoitteen",
+          "asetuksen"
+        ],
+        "a": "tuomion"
+      },
+      {
+        "q": "Tietosuoja suojaa...",
+        "options": [
+          "henkilötietoja",
+          "veroja",
+          "sähköä"
+        ],
+        "a": "henkilötietoja"
+      },
+      {
+        "q": "Rikoksesta seuraa...",
+        "options": [
+          "rangaistus",
+          "vero",
+          "äänestys"
+        ],
+        "a": "rangaistus"
+      },
+      {
+        "q": "Lain valmistelusta vastaa...",
+        "options": [
+          "valtioneuvosto",
+          "poliisi",
+          "tuomioistuin"
+        ],
+        "a": "valtioneuvosto"
+      },
+      {
+        "q": "Valitus tehdään...",
+        "options": [
+          "ylempään tuomioistuimeen",
+          "verovirastoon",
+          "koululle"
+        ],
+        "a": "ylempään tuomioistuimeen"
+      },
+      {
+        "q": "Sopimus on...",
+        "options": [
+          "sitova",
+          "leikkimielinen",
+          "aina suullinen"
+        ],
+        "a": "sitova"
+      },
+      {
+        "q": "Työsopimus tehdään...",
+        "options": [
+          "työntekijän ja työnantajan",
+          "opettajan ja huoltajan",
+          "poliisin ja tuomarin"
+        ],
+        "a": "työntekijän ja työnantajan"
+      },
+      {
+        "q": "Tekijänoikeus koskee...",
+        "options": [
+          "luovaa teosta",
+          "tuotteen hintaa",
+          "sähkölaskua"
+        ],
+        "a": "luovaa teosta"
+      },
+      {
+        "q": "Kotirauha suojaa...",
+        "options": [
+          "kotia luvattomalta tunkeutumiselta",
+          "koulun välitunteja",
+          "kulkukoiria"
+        ],
+        "a": "kotia luvattomalta tunkeutumiselta"
+      }
+    ]
+  },
+  "Uskonto/ET": {
+    "Maailman uskonnot": [
+      {
+        "q": "Kristinuskon pyhä kirja?",
+        "options": [
+          "Raamattu",
+          "Koraani",
+          "Tripitaka"
+        ],
+        "a": "Raamattu"
+      },
+      {
+        "q": "Islamin pyhä kirja?",
+        "options": [
+          "Koraani",
+          "Raamattu",
+          "Torah"
+        ],
+        "a": "Koraani"
+      },
+      {
+        "q": "Juutalaisuuden pyhä teksti?",
+        "options": [
+          "Toora",
+          "Koraani",
+          "Veda"
+        ],
+        "a": "Toora"
+      },
+      {
+        "q": "Buddhalaisuuden tavoite?",
+        "options": [
+          "valaistuminen",
+          "paratiisi",
+          "taivas"
+        ],
+        "a": "valaistuminen"
+      },
+      {
+        "q": "Hindulaisuuden pyhät tekstit?",
+        "options": [
+          "Veda-kirjat",
+          "Koraani",
+          "Raamattu"
+        ],
+        "a": "Veda-kirjat"
+      },
+      {
+        "q": "Islamin rukouspaikka?",
+        "options": [
+          "moskeija",
+          "kirkko",
+          "synagoga"
+        ],
+        "a": "moskeija"
+      },
+      {
+        "q": "Kristinuskon rukouspaikka?",
+        "options": [
+          "kirkko",
+          "temppeli",
+          "moskeija"
+        ],
+        "a": "kirkko"
+      },
+      {
+        "q": "Juutalaisen rukouspaikka?",
+        "options": [
+          "synagoga",
+          "temppeli",
+          "pagoda"
+        ],
+        "a": "synagoga"
+      },
+      {
+        "q": "Uskonnot opettavat myös...",
+        "options": [
+          "etiikkaa",
+          "kemiaa",
+          "fysiikkaa"
+        ],
+        "a": "etiikkaa"
+      },
+      {
+        "q": "Maallistuminen tarkoittaa...",
+        "options": [
+          "uskonnon vähenemistä",
+          "uskon lisääntymistä",
+          "verojen kiristystä"
+        ],
+        "a": "uskonnon vähenemistä"
+      }
+    ],
+    "Etiikka": [
+      {
+        "q": "Etiikka tutkii...",
+        "options": [
+          "oikeaa ja väärää",
+          "sähköä",
+          "kielioppia"
+        ],
+        "a": "oikeaa ja väärää"
+      },
+      {
+        "q": "Kultainen sääntö?",
+        "options": [
+          "Kohtele muita kuten toivot itseäsi kohdeltavan",
+          "Ensin työ, sitten huvi",
+          "Säästä pahan päivän varalle"
+        ],
+        "a": "Kohtele muita kuten toivot itseäsi kohdeltavan"
+      },
+      {
+        "q": "Rehellisyys on...",
+        "options": [
+          "hyve",
+          "rikos",
+          "vero"
+        ],
+        "a": "hyve"
+      },
+      {
+        "q": "Empatia on...",
+        "options": [
+          "myötätunto",
+          "viha",
+          "voima"
+        ],
+        "a": "myötätunto"
+      },
+      {
+        "q": "Vastuu tarkoittaa...",
+        "options": [
+          "tekojen seurausten kantamista",
+          "lomaa",
+          "veroa"
+        ],
+        "a": "tekojen seurausten kantamista"
+      },
+      {
+        "q": "Auttaminen on...",
+        "options": [
+          "solidaarisuutta",
+          "veroa",
+          "kauppaa"
+        ],
+        "a": "solidaarisuutta"
+      },
+      {
+        "q": "Yksityisyys liittyy...",
+        "options": [
+          "henkilötietoihin",
+          "sähköön",
+          "maalaukseen"
+        ],
+        "a": "henkilötietoihin"
+      },
+      {
+        "q": "Kiusaaminen on...",
+        "options": [
+          "väärin",
+          "oikein",
+          "lupa"
+        ],
+        "a": "väärin"
+      },
+      {
+        "q": "Suvaitsevaisuus on...",
+        "options": [
+          "erilaisten hyväksymistä",
+          "veron välttelyä",
+          "lain rikkomista"
+        ],
+        "a": "erilaisten hyväksymistä"
+      },
+      {
+        "q": "Ristiriita ratkaistaan...",
+        "options": [
+          "keskustelemalla",
+          "tapellen",
+          "vaikenemalla"
+        ],
+        "a": "keskustelemalla"
+      }
+    ],
+    "Kulttuurit": [
+      {
+        "q": "Kulttuuri on...",
+        "options": [
+          "tapojen ja arvojen kokonaisuus",
+          "vain taide",
+          "vain kieli"
+        ],
+        "a": "tapojen ja arvojen kokonaisuus"
+      },
+      {
+        "q": "Monikulttuurisuus tarkoittaa...",
+        "options": [
+          "useita kulttuureja yhdessä",
+          "yhtä kieltä",
+          "yhtä tapaa"
+        ],
+        "a": "useita kulttuureja yhdessä"
+      },
+      {
+        "q": "Juhlaperinne on...",
+        "options": [
+          "kulttuurin osa",
+          "vero",
+          "sää"
+        ],
+        "a": "kulttuurin osa"
+      },
+      {
+        "q": "Identiteetti liittyy...",
+        "options": [
+          "siihen kuka olen",
+          "sähköön",
+          "geologiaan"
+        ],
+        "a": "siihen kuka olen"
+      },
+      {
+        "q": "Symboli on...",
+        "options": [
+          "merkki jolla on merkitys",
+          "ääni",
+          "ruoka"
+        ],
+        "a": "merkki jolla on merkitys"
+      },
+      {
+        "q": "Rituaali on...",
+        "options": [
+          "toistuva tapa",
+          "lääke",
+          "kartta"
+        ],
+        "a": "toistuva tapa"
+      },
+      {
+        "q": "Kieli on...",
+        "options": [
+          "kulttuurin keskeinen osa",
+          "vain ääntä",
+          "vain kirjoitusta"
+        ],
+        "a": "kulttuurin keskeinen osa"
+      },
+      {
+        "q": "Media vaikuttaa...",
+        "options": [
+          "käsityksiin",
+          "sähköön",
+          "fysiikkaan"
+        ],
+        "a": "käsityksiin"
+      },
+      {
+        "q": "Globalisaatio lisää...",
+        "options": [
+          "vuorovaikutusta",
+          "eristäytymistä",
+          "kylmyyttä"
+        ],
+        "a": "vuorovaikutusta"
+      },
+      {
+        "q": "Ennakkoluulo on...",
+        "options": [
+          "ennakkoasenne",
+          "tieto",
+          "tiede"
+        ],
+        "a": "ennakkoasenne"
+      }
+    ]
+  },
+  "Musiikki": {
+    "Soittimet": [
+      {
+        "q": "Viulu kuuluu...",
+        "options": [
+          "jousisoittimiin",
+          "puhaltimiin",
+          "lyömäsoittimiin"
+        ],
+        "a": "jousisoittimiin"
+      },
+      {
+        "q": "Trumpetti kuuluu...",
+        "options": [
+          "vaskipuhaltimiin",
+          "puupuhaltimiin",
+          "kosketinsoittimiin"
+        ],
+        "a": "vaskipuhaltimiin"
+      },
+      {
+        "q": "Huilu kuuluu...",
+        "options": [
+          "puupuhaltimiin",
+          "vaskipuhaltimiin",
+          "jousiin"
+        ],
+        "a": "puupuhaltimiin"
+      },
+      {
+        "q": "Piano on...",
+        "options": [
+          "kosketinsoitin",
+          "jousisoitin",
+          "vaskisoitin"
+        ],
+        "a": "kosketinsoitin"
+      },
+      {
+        "q": "Rumpusetti on...",
+        "options": [
+          "lyömäsoitin",
+          "kosketinsoitin",
+          "jousisoitin"
+        ],
+        "a": "lyömäsoitin"
+      },
+      {
+        "q": "Sello kuuluu...",
+        "options": [
+          "jousisoittimiin",
+          "vaskiin",
+          "lyömäsoittimiin"
+        ],
+        "a": "jousisoittimiin"
+      },
+      {
+        "q": "Oboe on...",
+        "options": [
+          "puupuhallin",
+          "vaskipuhallin",
+          "lyömäsoitin"
+        ],
+        "a": "puupuhallin"
+      },
+      {
+        "q": "Klarinetti on...",
+        "options": [
+          "puupuhallin",
+          "vaskipuhallin",
+          "jousisoitin"
+        ],
+        "a": "puupuhallin"
+      },
+      {
+        "q": "Harppu on...",
+        "options": [
+          "kielisoitin",
+          "lyömäsoitin",
+          "puhallin"
+        ],
+        "a": "kielisoitin"
+      },
+      {
+        "q": "Tuba on...",
+        "options": [
+          "vaskipuhallin",
+          "puupuhallin",
+          "jousisoitin"
+        ],
+        "a": "vaskipuhallin"
+      }
+    ],
+    "Nuotit ja rytmi": [
+      {
+        "q": "Nuotti kertoo...",
+        "options": [
+          "sävelen korkeuden",
+          "soittimen",
+          "tahdin"
+        ],
+        "a": "sävelen korkeuden"
+      },
+      {
+        "q": "Tahti on...",
+        "options": [
+          "rytmin jakso",
+          "laulun nimi",
+          "tempo"
+        ],
+        "a": "rytmin jakso"
+      },
+      {
+        "q": "Tempo kuvaa...",
+        "options": [
+          "nopeutta",
+          "äänenvoimakkuutta",
+          "korkeutta"
+        ],
+        "a": "nopeutta"
+      },
+      {
+        "q": "Forte (f) tarkoittaa...",
+        "options": [
+          "voimakkaasti",
+          "hiljaa",
+          "nopeasti"
+        ],
+        "a": "voimakkaasti"
+      },
+      {
+        "q": "Piano (p) tarkoittaa...",
+        "options": [
+          "hiljaa",
+          "nopeasti",
+          "korkeasti"
+        ],
+        "a": "hiljaa"
+      },
+      {
+        "q": "Metronomi auttaa...",
+        "options": [
+          "pitämään tempon",
+          "virittämään",
+          "nuottien nimet"
+        ],
+        "a": "pitämään tempon"
+      },
+      {
+        "q": "4/4-tahti tarkoittaa...",
+        "options": [
+          "neljä iskua/tahdissa",
+          "neljä säveltä",
+          "neljä oktaavia"
+        ],
+        "a": "neljä iskua/tahdissa"
+      },
+      {
+        "q": "Puolisävelaskel on...",
+        "options": [
+          "pienin sävelväli",
+          "suurin sävelväli",
+          "tahti"
+        ],
+        "a": "pienin sävelväli"
+      },
+      {
+        "q": "Nuottiviivasto sisältää...",
+        "options": [
+          "5 viivaa",
+          "4 viivaa",
+          "6 viivaa"
+        ],
+        "a": "5 viivaa"
+      },
+      {
+        "q": "Kromatiikka käyttää...",
+        "options": [
+          "puolisävelaskeleita",
+          "vain oktaaveja",
+          "vain kolmisointuja"
+        ],
+        "a": "puolisävelaskeleita"
+      }
+    ],
+    "Laulut ja säveltäjät": [
+      {
+        "q": "Beethoven sävelsi...",
+        "options": [
+          "Kuudes sinfonia",
+          "Kreutzer-sonaatin",
+          "Kaunotar ja kulkuri"
+        ],
+        "a": "Kreutzer-sonaatin"
+      },
+      {
+        "q": "Sibeliuksen teos?",
+        "options": [
+          "Finlandia",
+          "Nessun Dorma",
+          "Carmen"
+        ],
+        "a": "Finlandia"
+      },
+      {
+        "q": "Mozart tunnetaan...",
+        "options": [
+          "oopperoista ja sinfonioista",
+          "heavy-musiikista",
+          "rapista"
+        ],
+        "a": "oopperoista ja sinfonioista"
+      },
+      {
+        "q": "Bach tunnetaan...",
+        "options": [
+          "urkumusiikista",
+          "rockista",
+          "jazzista"
+        ],
+        "a": "urkumusiikista"
+      },
+      {
+        "q": "Vivaldin teos?",
+        "options": [
+          "Neljä vuodenaikaa",
+          "Requiem",
+          "Messias"
+        ],
+        "a": "Neljä vuodenaikaa"
+      },
+      {
+        "q": "Tšaikovskin baletti?",
+        "options": [
+          "Joutsenlampi",
+          "Requiem",
+          "Messias"
+        ],
+        "a": "Joutsenlampi"
+      },
+      {
+        "q": "Puccini sävelsi...",
+        "options": [
+          "oopperaa",
+          "hip hopia",
+          "iskelmiä"
+        ],
+        "a": "oopperaa"
+      },
+      {
+        "q": "Chopin tunnetaan...",
+        "options": [
+          "pianokappaleista",
+          "sello-kvarteteista",
+          "urkuimproista"
+        ],
+        "a": "pianokappaleista"
+      },
+      {
+        "q": "Strauss sävelsi...",
+        "options": [
+          "valssia",
+          "tangoa",
+          "rapia"
+        ],
+        "a": "valssia"
+      },
+      {
+        "q": "Haydn tunnetaan...",
+        "options": [
+          "klassismista",
+          "barokista",
+          "romantiikasta"
+        ],
+        "a": "klassismista"
+      }
+    ]
+  },
+  "Kuvataide": {
+    "Värit": [
+      {
+        "q": "Päävärit valossa?",
+        "options": [
+          "punainen, vihreä, sininen",
+          "punainen, keltainen, sininen",
+          "keltainen, cyan, magenta"
+        ],
+        "a": "punainen, vihreä, sininen"
+      },
+      {
+        "q": "Päävärit maalauksessa?",
+        "options": [
+          "punainen, keltainen, sininen",
+          "punainen, vihreä, sininen",
+          "keltainen, cyan, magenta"
+        ],
+        "a": "punainen, keltainen, sininen"
+      },
+      {
+        "q": "Komplementtiväri siniselle?",
+        "options": [
+          "oranssi",
+          "vihreä",
+          "punainen"
+        ],
+        "a": "oranssi"
+      },
+      {
+        "q": "Sävyerottelu tarkoittaa...",
+        "options": [
+          "vaaleusasteita",
+          "nuotteja",
+          "rytmiä"
+        ],
+        "a": "vaaleusasteita"
+      },
+      {
+        "q": "Lämpimät värit ovat...",
+        "options": [
+          "punaiset/oranssit",
+          "siniset/vihreät",
+          "violetit"
+        ],
+        "a": "punaiset/oranssit"
+      },
+      {
+        "q": "Kylmät värit ovat...",
+        "options": [
+          "siniset/vihreät",
+          "punaiset/oranssit",
+          "keltainen"
+        ],
+        "a": "siniset/vihreät"
+      },
+      {
+        "q": "Sävy + valkoinen = ...",
+        "options": [
+          "tintti",
+          "varjo",
+          "neutraali"
+        ],
+        "a": "tintti"
+      },
+      {
+        "q": "Sävy + musta = ...",
+        "options": [
+          "shade",
+          "tintti",
+          "valo"
+        ],
+        "a": "shade"
+      },
+      {
+        "q": "Kontrasti tarkoittaa...",
+        "options": [
+          "eroa",
+          "samaa",
+          "syvyyttä"
+        ],
+        "a": "eroa"
+      },
+      {
+        "q": "Paletti on...",
+        "options": [
+          "värivalikoima",
+          "sivellin",
+          "kangas"
+        ],
+        "a": "värivalikoima"
+      }
+    ],
+    "Taiteen lajit": [
+      {
+        "q": "Öljyvärimaalaus on...",
+        "options": [
+          "maalausta",
+          "veistosta",
+          "grafiikkaa"
+        ],
+        "a": "maalausta"
+      },
+      {
+        "q": "Akvarelli on...",
+        "options": [
+          "vesivärimaalaus",
+          "kuivapastelli",
+          "mosaiikki"
+        ],
+        "a": "vesivärimaalaus"
+      },
+      {
+        "q": "Veistos on...",
+        "options": [
+          "kolmiulotteinen teos",
+          "valokuva",
+          "sarjakuva"
+        ],
+        "a": "kolmiulotteinen teos"
+      },
+      {
+        "q": "Grafiikka on...",
+        "options": [
+          "vedostekniikka",
+          "sävellys",
+          "tanssi"
+        ],
+        "a": "vedostekniikka"
+      },
+      {
+        "q": "Kollaasi on...",
+        "options": [
+          "yhdistelmätekniikka",
+          "veistos",
+          "laulu"
+        ],
+        "a": "yhdistelmätekniikka"
+      },
+      {
+        "q": "Fresko on...",
+        "options": [
+          "seinäm maalaus märälle kalkille",
+          "puupiirros",
+          "pronssivalu"
+        ],
+        "a": "seinäm maalaus märälle kalkille"
+      },
+      {
+        "q": "Valokuvaus on...",
+        "options": [
+          "kuvan ottamista valolla",
+          "maalin kaatamista",
+          "tanssia"
+        ],
+        "a": "kuvan ottamista valolla"
+      },
+      {
+        "q": "Installaatiotaide on...",
+        "options": [
+          "tilallinen teos",
+          "lyhyt elokuva",
+          "nuotinnos"
+        ],
+        "a": "tilallinen teos"
+      },
+      {
+        "q": "Performanssi on...",
+        "options": [
+          "esiintyvä taide",
+          "veistos",
+          "piirros"
+        ],
+        "a": "esiintyvä taide"
+      },
+      {
+        "q": "Sarjakuva on...",
+        "options": [
+          "kuvilla kerrottu tarina",
+          "veistos",
+          "sävellystä"
+        ],
+        "a": "kuvilla kerrottu tarina"
+      }
+    ],
+    "Taiteilijat": [
+      {
+        "q": "Leonardo da Vinci tunnetaan...",
+        "options": [
+          "Mona Lisasta",
+          "Guernicasta",
+          "Tähdet yö"
+        ],
+        "a": "Mona Lisasta"
+      },
+      {
+        "q": "Vincent van Gogh...",
+        "options": [
+          "Tähdet yö",
+          "Huuto",
+          "Maalaismaisema"
+        ],
+        "a": "Tähdet yö"
+      },
+      {
+        "q": "Pablo Picasso...",
+        "options": [
+          "Guernica",
+          "Sistine-kappeli",
+          "Friisilintu"
+        ],
+        "a": "Guernica"
+      },
+      {
+        "q": "Claude Monet...",
+        "options": [
+          "Lumpeet",
+          "Huuto",
+          "Nighthawks"
+        ],
+        "a": "Lumpeet"
+      },
+      {
+        "q": "Edvard Munch...",
+        "options": [
+          "Huuto",
+          "Syntymä",
+          "Hehku"
+        ],
+        "a": "Huuto"
+      },
+      {
+        "q": "Salvador Dalí...",
+        "options": [
+          "Muiston pysyvyys",
+          "Tähdet yö",
+          "Sade"
+        ],
+        "a": "Muiston pysyvyys"
+      },
+      {
+        "q": "Michelangelo...",
+        "options": [
+          "Sistinen kappeli",
+          "Guernica",
+          "Huuto"
+        ],
+        "a": "Sistinen kappeli"
+      },
+      {
+        "q": "Rembrandt...",
+        "options": [
+          "Yövartio",
+          "Guernica",
+          "Aamu"
+        ],
+        "a": "Yövartio"
+      },
+      {
+        "q": "Frida Kahlo...",
+        "options": [
+          "Omakuva",
+          "Sinep",
+          "Kaukainen"
+        ],
+        "a": "Omakuva"
+      },
+      {
+        "q": "Akseli Gallen-Kallela...",
+        "options": [
+          "Aino-triptyykki",
+          "Finlandia",
+          "Joutsenlampi"
+        ],
+        "a": "Aino-triptyykki"
+      }
+    ]
   }
-  pickWord();
+};
+
+// ------- State -------
+let sel = { grade:null, subject:null, topic:null, mode:null };
+let score = 0;
+let current = null;
+let pool = [];
+
+const SUBJECT_TOPICS = Object.fromEntries(Object.entries(QBANK).map(([s,topics]) => [s, Object.keys(topics)]));
+
+function el(id){ return document.getElementById(id); }
+function show(id){ el(id).classList.remove('hidden'); }
+function hide(id){ el(id).classList.add('hidden'); }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } }
+
+window.addEventListener('DOMContentLoaded', () => {
+  // Class buttons 1–9
+  const cg = el('classGrid');
+  for(let i=1;i<=9;i++) {
+    const b = document.createElement('button');
+    b.textContent = i + ". luokka";
+    b.onclick = () => chooseClass(i);
+    cg.appendChild(b);
+  }
+  // Subject buttons
+  const sg = el('subjectGrid');
+  Object.keys(QBANK).forEach(s => {
+    const b = document.createElement('button');
+    b.textContent = s;
+    b.onclick = () => chooseSubject(s);
+    sg.appendChild(b);
+  });
+});
+
+function chooseClass(g) {
+  sel.grade = g;
+  el('selClass').textContent = g + ". luokka";
+  hide('step1'); show('step2');
+}
+
+function chooseSubject(s) {
+  sel.subject = s;
+  el('selSubject').textContent = s;
+  // topics
+  const tg = el('topicGrid'); tg.innerHTML = "";
+  SUBJECT_TOPICS[s].forEach(t => {
+    const b = document.createElement('button');
+    b.textContent = t;
+    b.onclick = () => chooseTopic(t);
+    tg.appendChild(b);
+  });
+  hide('step2'); show('step3');
+}
+
+function chooseTopic(t) {
+  sel.topic = t;
+  el('selTopic').textContent = t;
+  hide('step3'); show('step4');
+}
+
+function startGame(mode) {
+  sel.mode = mode;
+  score = 0; el('score').textContent = score;
+  pool = (QBANK[sel.subject] && QBANK[sel.subject][sel.topic]) ? [...QBANK[sel.subject][sel.topic]] : [];
+  shuffle(pool);
+  if(pool.length === 0) { alert("Tälle aiheelle ei vielä ole kysymyksiä."); return; }
+  hide('step4'); show('gameCard');
+  el('crumbs').textContent = `${sel.grade}. lk • ${sel.subject} • ${sel.topic} • ${mode === 'mc' ? 'Monivalinta' : 'Kirjoita'}`;
+  nextQuestion();
+}
+
+function nextQuestion() {
+  el('feedback').textContent = "";
+  if(pool.length === 0) { // reset / reshuffle
+    pool = (QBANK[sel.subject] && QBANK[sel.subject][sel.topic]) ? [...QBANK[sel.subject][sel.topic]] : [];
+    shuffle(pool);
+  }
+  current = pool.pop();
+  renderQuestion(current);
+}
+
+function renderQuestion(item) {
+  el('question').textContent = item.q;
+  el('options').innerHTML = "";
+  el('inputWrap').classList.add('hidden');
+
+  if(sel.mode === 'mc' && item.options) {
+    const opts = [...item.options]; shuffle(opts);
+    opts.forEach(o => {
+      const btn = document.createElement('button');
+      btn.textContent = o;
+      btn.onclick = () => checkAnswer(o);
+      el('options').appendChild(btn);
+    });
+  } else {
+    el('inputWrap').classList.remove('hidden');
+    el('answerInput').value = "";
+    if(item.placeholder) el('answerInput').placeholder = item.placeholder;
+  }
+}
+
+function normalize(s){ return (s ?? "").toString().trim().toLowerCase(); }
+
+function checkAnswer(chosen) {
+  const correct = current.a;
+  if(normalize(chosen) === normalize(correct)) {
+    score++; el('score').textContent = score;
+    el('feedback').textContent = "Oikein!"; el('feedback').className = "feedback ok";
+  } else {
+    el('feedback').textContent = `Väärin. Oikea vastaus: ${correct}`; el('feedback').className = "feedback bad";
+  }
+}
+
+function submitInput() {
+  const typed = el('answerInput').value;
+  checkAnswer(typed);
 }
 
 function backToMenu() {
-  document.getElementById("menu").style.display = "block";
-  document.getElementById("game").style.display = "none";
-  score = 0;
-  document.getElementById("feedback").innerText = "";
+  hide('gameCard'); show('step1');
 }
 
-function allowDrop(ev) {
-  ev.preventDefault();
-}
+// Google Identity callback (optional usage)
+window.handleCredentialResponse = (response) => {
+  // For demo, we won't verify token here. We just show that user signed in.
+  // In production you'd send response.credential (JWT) to your backend to verify.
+  const info = document.getElementById('userInfo');
+  info.textContent = "Kirjautuminen onnistui (demo).";
+};
 
-function drag(ev) {
-  ev.dataTransfer.setData("text", ev.target.id);
-}
-
-function drop(ev, expected) {
-  ev.preventDefault();
-  let data = ev.dataTransfer.getData("text");
-  let word = document.getElementById(data).innerText;
-  let correct = words.find(w => w.word === word).correct;
-  if (correct === expected) {
-    document.getElementById("feedback").innerText = "Oikein!";
-    score++;
-  } else {
-    document.getElementById("feedback").innerText = "Väärin!";
-  }
-  startDragDrop();
-}
 </script>
 </body>
 </html>
